@@ -20,6 +20,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# TypeScript / Next.js generated
+next-env.d.ts
+*.tsbuildinfo
+
+# Local editor / tooling config
+.claude/
+
 # Misc
 .DS_Store
 *.pem
