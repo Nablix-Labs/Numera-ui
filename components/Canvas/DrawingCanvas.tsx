@@ -18,6 +18,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import { Stage, Layer, Line, Rect } from 'react-konva';
 import type Konva from 'konva';
 import { useNumeraStore, type DrawnItem } from '@/store/useNumeraStore';
+import TutorLayer from './TutorLayer';
 
 interface DrawingCanvasProps {
   onExportReady?: (exportFn: () => string | null) => void;
@@ -133,6 +134,17 @@ export default function DrawingCanvas({ onExportReady }: DrawingCanvasProps) {
     setDraftItem(null);
   }, [addItem, setDraftItem]);
 
+  // ── Dev-only hook to exercise the tutor layer before the backend exists ──────
+  // Usage in console: numeraTutor.draw({ mode:'replace', elements:[...] })
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return;
+    (window as unknown as Record<string, unknown>).numeraTutor = {
+      draw: (p: Parameters<ReturnType<typeof useNumeraStore.getState>['applyCanvasDraw']>[0]) =>
+        useNumeraStore.getState().applyCanvasDraw(p),
+      clear: () => useNumeraStore.getState().clearTutorMarks(),
+    };
+  }, []);
+
   // ── Undo / Redo via keyboard (shares store history with toolbar) ─────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -204,6 +216,8 @@ export default function DrawingCanvas({ onExportReady }: DrawingCanvasProps) {
           {items.map(renderItem)}
           {draft && renderItem(draft)}
         </Layer>
+        {/* AI-tutor marks — separate, non-erasable layer above the student's */}
+        <TutorLayer width={containerSize.width} height={containerSize.height} />
       </Stage>
     </div>
   );

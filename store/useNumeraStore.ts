@@ -33,6 +33,33 @@ export type DrawnItem =
   | { id: string; kind: 'line'; points: number[]; color: string; size: number }
   | { id: string; kind: 'rect'; x: number; y: number; w: number; h: number; color: string; size: number };
 
+/**
+ * Tutor-drawn element, rendered on a separate (non-erasable) canvas layer.
+ * Geometry is NORMALISED 0–1 relative to canvas width/height, so the backend
+ * never needs to know the pixel size — the renderer multiplies by the live
+ * stage dimensions. Matches the `canvas_draw` message contract.
+ */
+export type TutorElementKind =
+  | 'text' | 'math' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'freehand' | 'highlight';
+
+export interface TutorElement {
+  id: string;
+  kind: TutorElementKind;
+  x?: number; y?: number; w?: number; h?: number;     // normalised 0–1
+  from?: [number, number]; to?: [number, number];     // normalised endpoints
+  points?: number[];                                  // normalised x,y pairs
+  text?: string; tex?: string;                        // text / KaTeX content
+  color?: string; strokeWidth?: number; size?: number;
+}
+
+/** Payload the backend/LLM sends to draw on the canvas. */
+export interface CanvasDrawPayload {
+  author?: 'tutor';
+  actionId?: string;
+  mode?: 'append' | 'replace';
+  elements: Array<Omit<TutorElement, 'id'> & { id?: string }>;
+}
+
 export interface TranscriptMessage {
   id: string;
   role: 'ai' | 'student';
@@ -63,8 +90,9 @@ export interface NumeraState {
   activeTool: DrawingTool;
   strokeColor: string;
   strokeWidth: number;
-  items: DrawnItem[];   // committed canvas items
-  undone: DrawnItem[];  // redo stack
+  items: DrawnItem[];          // committed student items
+  undone: DrawnItem[];         // student redo stack
+  tutorElements: TutorElement[]; // AI-tutor marks (separate, non-erasable layer)
 
   // Input mode (voice | text | canvas)
   inputMode: InputMode;
@@ -88,6 +116,8 @@ export interface NumeraState {
   undo: () => void;
   redo: () => void;
   clearCanvas: () => void;
+  applyCanvasDraw: (payload: CanvasDrawPayload) => void;
+  clearTutorMarks: () => void;
   setInputMode: (m: InputMode) => void;
   setTextInput: (v: string) => void;
   reset: () => void;
@@ -101,7 +131,8 @@ const initial: Omit<
   | 'setQuestionText' | 'setQuestionNumber' | 'toggleMic' | 'setVoiceStatus'
   | 'addTranscriptMessage' | 'updatePartialTranscript' | 'setActiveTool'
   | 'setStrokeColor' | 'setStrokeWidth' | 'addItem' | 'undo' | 'redo'
-  | 'clearCanvas' | 'setInputMode' | 'setTextInput' | 'reset'
+  | 'clearCanvas' | 'applyCanvasDraw' | 'clearTutorMarks'
+  | 'setInputMode' | 'setTextInput' | 'reset'
 > = {
   sessionId: null,
   sessionState: 'idle',
@@ -136,6 +167,7 @@ const initial: Omit<
   strokeWidth: 3,
   items: [],
   undone: [],
+  tutorElements: [],
   inputMode: 'voice',
   textInput: '',
 };
@@ -215,6 +247,20 @@ export const useNumeraStore = create<NumeraState>((set) => ({
     }),
 
   clearCanvas: () => set({ items: [], undone: [] }),
+
+  applyCanvasDraw: (payload) =>
+    set((s) => {
+      const incoming: TutorElement[] = payload.elements.map((el) => ({
+        ...el,
+        id: el.id ?? crypto.randomUUID(),
+      }));
+      return {
+        tutorElements:
+          payload.mode === 'replace' ? incoming : [...s.tutorElements, ...incoming],
+      };
+    }),
+
+  clearTutorMarks: () => set({ tutorElements: [] }),
 
   setInputMode: (inputMode) => set({ inputMode }),
   setTextInput: (textInput) => set({ textInput }),

@@ -29,6 +29,7 @@ export function useWebSocket(sessionId: string | null) {
     updatePartialTranscript,
     setSessionState,
     setVoiceStatus,
+    applyCanvasDraw,
   } = useNumeraStore();
 
   const connect = useCallback(() => {
@@ -62,6 +63,11 @@ export function useWebSocket(sessionId: string | null) {
             setSessionState(msg.state as Parameters<typeof setSessionState>[0]);
             break;
 
+          case 'canvas_draw':
+            // AI tutor draws on the canvas — normalised geometry, see CanvasDrawPayload
+            applyCanvasDraw(msg as unknown as Parameters<typeof applyCanvasDraw>[0]);
+            break;
+
           case 'ui_instruction':
             // Backend-controlled UI updates — extend this as the API matures
             console.log('[WS] ui_instruction', msg.instruction);
@@ -87,7 +93,7 @@ export function useWebSocket(sessionId: string | null) {
     ws.onerror = (err) => {
       console.error('[WS] error', err);
     };
-  }, [sessionId, addTranscriptMessage, updatePartialTranscript, setSessionState, setVoiceStatus]);
+  }, [sessionId, addTranscriptMessage, updatePartialTranscript, setSessionState, setVoiceStatus, applyCanvasDraw]);
 
   useEffect(() => {
     connect();
