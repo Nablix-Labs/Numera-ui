@@ -11,7 +11,7 @@
  *   • Pen FAB bottom-left, Help FAB bottom-right
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import BarModel from './BarModel';
@@ -20,22 +20,48 @@ import Toolbar from './Toolbar';
 // react-konva requires client-only rendering (no SSR)
 const DrawingCanvas = dynamic(() => import('./DrawingCanvas'), { ssr: false });
 
+const HELP_TIPS = [
+  ['Pen', 'Write your working freehand.'],
+  ['Eraser', 'Rub out a mistake.'],
+  ['Shape', 'Drag to draw a rectangle.'],
+  ['Ruler', 'Drag for a straight line.'],
+  ['Colour', 'Tap the dot to change colour & thickness.'],
+  ['Check', 'Submit your working when you are done.'],
+];
+
 export default function CanvasStage() {
-  const { questionText, questionNumber, setActiveTool } = useNumeraStore();
+  const { questionText, questionNumber, items, setActiveTool } = useNumeraStore();
 
   const exportRef = useRef<(() => string | null) | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleExportReady = useCallback((fn: () => string | null) => {
     exportRef.current = fn;
   }, []);
 
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 2600);
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+  }, []);
+
   const handleCheckWork = useCallback(() => {
     const png = exportRef.current?.();
-    if (!png) return;
-    // In production: sendCanvasSubmission(png) via useWebSocket
+    // Frontend-only: the backend isn't wired, so we acknowledge locally.
+    // In production this PNG goes to sendCanvasSubmission() via useWebSocket.
+    if (!png || items.length === 0) {
+      showToast('Show your working on the canvas first, then tap Check.');
+      return;
+    }
     console.log('[Numera] Canvas submitted, PNG length:', png.length);
-    // TODO: wire to sendCanvasSubmission from useWebSocket when backend is live
-  }, []);
+    showToast('Nice work — your working has been submitted.');
+  }, [items.length, showToast]);
 
   return (
     <main
@@ -69,6 +95,21 @@ export default function CanvasStage() {
         <DrawingCanvas onExportReady={handleExportReady} />
       </div>
 
+      {/* Check-work feedback toast */}
+      {toast && (
+        <div
+          className="absolute bottom-[88px] left-1/2 -translate-x-1/2 z-30 bg-[#1a1a1a] text-white text-xs px-4 py-2.5 rounded-full flex items-center gap-2"
+          style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}
+          role="status"
+          aria-live="polite"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9"/><path d="M8 12 l3 3 l5 -6"/>
+          </svg>
+          {toast}
+        </div>
+      )}
+
       {/* Corner FABs */}
       <button
         onClick={() => setActiveTool('pen')}
@@ -82,15 +123,40 @@ export default function CanvasStage() {
         </svg>
       </button>
 
-      <button
-        title="Help"
-        aria-label="Help"
-        className="absolute bottom-6 right-6 w-10 h-10 rounded-full bg-[#eaeaea] text-[#7a7a7a] border border-[#c8c8c8] flex items-center justify-center z-20 hover:bg-[#dadada] transition-colors"
-      >
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="9"/><path d="M9.4 9.3 a2.6 2.6 0 1 1 3.3 2.5 c-0.8 0.3 -0.8 1 -0.8 1.7"/><circle cx="12" cy="16.6" r="0.7" fill="currentColor" stroke="none"/>
-        </svg>
-      </button>
+      {/* Help FAB + popover */}
+      <div className="absolute bottom-6 right-6 z-20">
+        {helpOpen && (
+          <div
+            className="absolute bottom-[calc(100%+10px)] right-0 w-64 bg-white border border-[#9a9a9a] rounded-xl p-3.5"
+            style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.14)' }}
+            role="dialog"
+            aria-label="Canvas help"
+          >
+            <div className="text-[11px] font-semibold tracking-widest uppercase text-[#9a9a9a] mb-2">
+              Using the canvas
+            </div>
+            <ul className="flex flex-col gap-1.5">
+              {HELP_TIPS.map(([name, desc]) => (
+                <li key={name} className="text-[11.5px] leading-snug text-[#1a1a1a]">
+                  <span className="font-semibold">{name}</span>
+                  <span className="text-[#7a7a7a]"> — {desc}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <button
+          onClick={() => setHelpOpen((o) => !o)}
+          title="Help"
+          aria-label="Help"
+          aria-expanded={helpOpen}
+          className={cnHelp(helpOpen)}
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9"/><path d="M9.4 9.3 a2.6 2.6 0 1 1 3.3 2.5 c-0.8 0.3 -0.8 1 -0.8 1.7"/><circle cx="12" cy="16.6" r="0.7" fill="currentColor" stroke="none"/>
+          </svg>
+        </button>
+      </div>
 
       {/* Floating toolbar */}
       <div className="z-20 absolute bottom-0 left-0 right-0">
@@ -98,4 +164,14 @@ export default function CanvasStage() {
       </div>
     </main>
   );
+}
+
+/** Help FAB styling — dark when open, muted when closed. */
+function cnHelp(open: boolean) {
+  return [
+    'w-10 h-10 rounded-full flex items-center justify-center transition-colors border',
+    open
+      ? 'bg-[#1a1a1a] text-white border-[#1a1a1a]'
+      : 'bg-[#eaeaea] text-[#7a7a7a] border-[#c8c8c8] hover:bg-[#dadada] hover:text-[#1a1a1a]',
+  ].join(' ');
 }

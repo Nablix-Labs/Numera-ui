@@ -21,6 +21,18 @@ export type DrawingTool = 'pen' | 'eraser' | 'shape' | 'ruler';
 
 export type InputMode = 'voice' | 'text' | 'canvas';
 
+/**
+ * A single committed item on the drawing canvas.
+ *  - stroke: freehand pen / eraser path (eraser uses destination-out)
+ *  - line:   straight line drawn with the ruler tool
+ *  - rect:   rectangle drawn with the shape tool
+ * `size` is the stroke width in px.
+ */
+export type DrawnItem =
+  | { id: string; kind: 'stroke'; tool: 'pen' | 'eraser'; points: number[]; color: string; size: number }
+  | { id: string; kind: 'line'; points: number[]; color: string; size: number }
+  | { id: string; kind: 'rect'; x: number; y: number; w: number; h: number; color: string; size: number };
+
 export interface TranscriptMessage {
   id: string;
   role: 'ai' | 'student';
@@ -51,6 +63,8 @@ export interface NumeraState {
   activeTool: DrawingTool;
   strokeColor: string;
   strokeWidth: number;
+  items: DrawnItem[];   // committed canvas items
+  undone: DrawnItem[];  // redo stack
 
   // Input mode (voice | text | canvas)
   inputMode: InputMode;
@@ -70,6 +84,10 @@ export interface NumeraState {
   setActiveTool: (t: DrawingTool) => void;
   setStrokeColor: (c: string) => void;
   setStrokeWidth: (w: number) => void;
+  addItem: (item: DrawnItem) => void;
+  undo: () => void;
+  redo: () => void;
+  clearCanvas: () => void;
   setInputMode: (m: InputMode) => void;
   setTextInput: (v: string) => void;
   reset: () => void;
@@ -82,7 +100,8 @@ const initial: Omit<
   | 'setSessionId' | 'setSessionState' | 'setActiveSlide' | 'setTotalSlides'
   | 'setQuestionText' | 'setQuestionNumber' | 'toggleMic' | 'setVoiceStatus'
   | 'addTranscriptMessage' | 'updatePartialTranscript' | 'setActiveTool'
-  | 'setStrokeColor' | 'setStrokeWidth' | 'setInputMode' | 'setTextInput' | 'reset'
+  | 'setStrokeColor' | 'setStrokeWidth' | 'addItem' | 'undo' | 'redo'
+  | 'clearCanvas' | 'setInputMode' | 'setTextInput' | 'reset'
 > = {
   sessionId: null,
   sessionState: 'idle',
@@ -115,6 +134,8 @@ const initial: Omit<
   activeTool: 'pen',
   strokeColor: '#1a1a1a',
   strokeWidth: 3,
+  items: [],
+  undone: [],
   inputMode: 'voice',
   textInput: '',
 };
@@ -175,6 +196,26 @@ export const useNumeraStore = create<NumeraState>((set) => ({
   setActiveTool: (activeTool) => set({ activeTool }),
   setStrokeColor: (strokeColor) => set({ strokeColor }),
   setStrokeWidth: (strokeWidth) => set({ strokeWidth }),
+
+  addItem: (item) =>
+    set((s) => ({ items: [...s.items, item], undone: [] })),
+
+  undo: () =>
+    set((s) => {
+      if (s.items.length === 0) return s;
+      const last = s.items[s.items.length - 1];
+      return { items: s.items.slice(0, -1), undone: [...s.undone, last] };
+    }),
+
+  redo: () =>
+    set((s) => {
+      if (s.undone.length === 0) return s;
+      const last = s.undone[s.undone.length - 1];
+      return { items: [...s.items, last], undone: s.undone.slice(0, -1) };
+    }),
+
+  clearCanvas: () => set({ items: [], undone: [] }),
+
   setInputMode: (inputMode) => set({ inputMode }),
   setTextInput: (textInput) => set({ textInput }),
 

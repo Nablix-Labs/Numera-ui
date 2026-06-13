@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { useNumeraStore, type DrawingTool } from '@/store/useNumeraStore';
 import { cn } from '@/lib/cn';
 
@@ -8,6 +9,10 @@ interface ToolbarProps {
 }
 
 const SELECTABLE: DrawingTool[] = ['pen', 'eraser', 'shape', 'ruler'];
+
+// Strictly grayscale to honour the wireframe's black-and-white design language.
+const COLORS = ['#1a1a1a', '#7a7a7a', '#b0b0b0'];
+const WIDTHS = [2, 4, 7];
 
 function ToolIcon({ id }: { id: string }) {
   const icons: Record<string, JSX.Element> = {
@@ -51,7 +56,31 @@ function ToolIcon({ id }: { id: string }) {
 }
 
 export default function Toolbar({ onCheckWork }: ToolbarProps) {
-  const { activeTool, strokeColor, setActiveTool } = useNumeraStore();
+  const {
+    activeTool, strokeColor, strokeWidth, items, undone,
+    setActiveTool, setStrokeColor, setStrokeWidth, undo, redo,
+  } = useNumeraStore();
+
+  const [colorOpen, setColorOpen] = useState(false);
+  const colorRef = useRef<HTMLDivElement>(null);
+
+  // Close the colour popover on outside click / Escape
+  useEffect(() => {
+    if (!colorOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (colorRef.current && !colorRef.current.contains(e.target as Node)) setColorOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setColorOpen(false);
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [colorOpen]);
+
+  const canUndo = items.length > 0;
+  const canRedo = undone.length > 0;
 
   return (
     <div
@@ -84,18 +113,28 @@ export default function Toolbar({ onCheckWork }: ToolbarProps) {
 
       {/* Undo */}
       <button
+        onClick={undo}
+        disabled={!canUndo}
         title="Undo (Cmd/Ctrl+Z)"
         aria-label="Undo"
-        className="w-9 h-9 rounded-full flex items-center justify-center text-[#1a1a1a] hover:bg-[#f4f4f4] transition-colors"
+        className={cn(
+          'w-9 h-9 rounded-full flex items-center justify-center text-[#1a1a1a] transition-colors',
+          canUndo ? 'hover:bg-[#f4f4f4]' : 'opacity-30 cursor-not-allowed'
+        )}
       >
         <ToolIcon id="undo" />
       </button>
 
       {/* Redo */}
       <button
+        onClick={redo}
+        disabled={!canRedo}
         title="Redo (Cmd/Ctrl+Shift+Z)"
         aria-label="Redo"
-        className="w-9 h-9 rounded-full flex items-center justify-center text-[#1a1a1a] hover:bg-[#f4f4f4] transition-colors"
+        className={cn(
+          'w-9 h-9 rounded-full flex items-center justify-center text-[#1a1a1a] transition-colors',
+          canRedo ? 'hover:bg-[#f4f4f4]' : 'opacity-30 cursor-not-allowed'
+        )}
       >
         <ToolIcon id="redo" />
       </button>
@@ -103,21 +142,71 @@ export default function Toolbar({ onCheckWork }: ToolbarProps) {
       {/* Separator */}
       <div className="w-[1.5px] h-[22px] bg-[#c8c8c8] mx-0.5" />
 
-      {/* Color dot */}
-      <button
-        title="Stroke colour"
-        aria-label="Stroke colour"
-        className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#f4f4f4] transition-colors"
-      >
-        <span
-          className="w-[18px] h-[18px] rounded-full"
-          style={{
-            background: strokeColor,
-            border: '2px solid #fff',
-            boxShadow: '0 0 0 1.5px #9a9a9a',
-          }}
-        />
-      </button>
+      {/* Colour + stroke width popover */}
+      <div className="relative" ref={colorRef}>
+        <button
+          onClick={() => setColorOpen((o) => !o)}
+          title="Colour & thickness"
+          aria-label="Colour and thickness"
+          aria-expanded={colorOpen}
+          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#f4f4f4] transition-colors"
+        >
+          <span
+            className="w-[18px] h-[18px] rounded-full"
+            style={{ background: strokeColor, border: '2px solid #fff', boxShadow: '0 0 0 1.5px #9a9a9a' }}
+          />
+        </button>
+
+        {colorOpen && (
+          <div
+            className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 bg-white border border-[#9a9a9a] rounded-xl p-3 flex flex-col gap-3"
+            style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.14)' }}
+            role="menu"
+          >
+            {/* Colours */}
+            <div className="flex items-center gap-2">
+              {COLORS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setStrokeColor(c)}
+                  aria-label={`Colour ${c}`}
+                  aria-pressed={strokeColor === c}
+                  className={cn(
+                    'w-6 h-6 rounded-full transition-transform',
+                    strokeColor === c ? 'scale-110 ring-2 ring-offset-2 ring-[#1a1a1a]' : 'hover:scale-105'
+                  )}
+                  style={{ background: c, boxShadow: '0 0 0 1.5px #9a9a9a' }}
+                />
+              ))}
+            </div>
+            <div className="h-[1px] bg-[#eaeaea]" />
+            {/* Stroke widths */}
+            <div className="flex items-center gap-3 justify-center">
+              {WIDTHS.map((w) => (
+                <button
+                  key={w}
+                  onClick={() => setStrokeWidth(w)}
+                  aria-label={`Thickness ${w}`}
+                  aria-pressed={strokeWidth === w}
+                  className={cn(
+                    'w-8 h-8 rounded-lg flex items-center justify-center transition-colors',
+                    strokeWidth === w ? 'bg-[#1a1a1a]' : 'bg-[#f4f4f4] hover:bg-[#eaeaea]'
+                  )}
+                >
+                  <span
+                    className="rounded-full"
+                    style={{
+                      width: w + 2,
+                      height: w + 2,
+                      background: strokeWidth === w ? '#fff' : '#1a1a1a',
+                    }}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Check My Work */}
       <button
