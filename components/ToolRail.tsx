@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Pencil, BookOpen, Users, Folder, Flag,
   Bell, Clock, Headphones,
@@ -8,21 +9,46 @@ import {
 import { cn } from '@/lib/cn';
 
 const TOP_ITEMS = [
-  { icon: Pencil,      label: 'Lesson',        id: 'lesson' },
-  { icon: BookOpen,    label: 'Workbook',      id: 'workbook' },
-  { icon: Users,       label: 'People',        id: 'people' },
-  { icon: Folder,      label: 'Files',         id: 'files' },
-  { icon: Flag,        label: 'Flagged',       id: 'flagged' },
+  { icon: Pencil,   label: 'Lesson',         href: '/' },
+  { icon: BookOpen, label: 'Workbook',       href: '/workbook' },
+  { icon: Users,    label: 'People',         href: '/people' },
+  { icon: Folder,   label: 'Files',          href: '/files' },
+  { icon: Flag,     label: 'Flagged',        href: '/flagged' },
 ];
 
 const BOTTOM_ITEMS = [
-  { icon: Bell,        label: 'Notifications', id: 'notifications' },
-  { icon: Clock,       label: 'History',       id: 'history' },
-  { icon: Headphones,  label: 'Help & support',id: 'help' },
+  { icon: Bell,       label: 'Notifications', href: '/notifications' },
+  { icon: Clock,      label: 'History',       href: '/history' },
+  { icon: Headphones, label: 'Help & support',href: '/help' },
 ];
 
+function RailLink({
+  icon: Icon, label, href, active,
+}: {
+  icon: typeof Pencil; label: string; href: string; active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      title={label}
+      aria-label={label}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        'w-[38px] h-[38px] rounded-lg flex items-center justify-center transition-colors flex-shrink-0',
+        active
+          ? 'bg-white text-[#1a1a1a]'
+          : 'bg-transparent text-[#cfcfcf] hover:bg-[#2c2c2c] hover:text-white'
+      )}
+    >
+      <Icon size={18} strokeWidth={1.6} />
+    </Link>
+  );
+}
+
 export default function ToolRail() {
-  const [active, setActive] = useState('lesson');
+  const pathname = usePathname();
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href);
 
   return (
     <nav
@@ -30,47 +56,26 @@ export default function ToolRail() {
       aria-label="Tool rail"
     >
       {/* Brand mark */}
-      <div className="w-[34px] h-[34px] rounded-lg border border-white text-white flex items-center justify-center font-bold text-base mb-2 flex-shrink-0">
+      <Link
+        href="/"
+        title="Numera"
+        aria-label="Numera home"
+        className="w-[34px] h-[34px] rounded-lg border border-white text-white flex items-center justify-center font-bold text-base mb-2 flex-shrink-0"
+      >
         N
-      </div>
+      </Link>
 
       {/* Top nav */}
-      {TOP_ITEMS.map(({ icon: Icon, label, id }) => (
-        <button
-          key={id}
-          title={label}
-          aria-label={label}
-          onClick={() => setActive(id)}
-          className={cn(
-            'w-[38px] h-[38px] rounded-lg flex items-center justify-center transition-colors flex-shrink-0',
-            active === id
-              ? 'bg-white text-[#1a1a1a]'
-              : 'bg-transparent text-[#cfcfcf] hover:bg-[#2c2c2c] hover:text-white'
-          )}
-        >
-          <Icon size={18} strokeWidth={1.6} />
-        </button>
+      {TOP_ITEMS.map((item) => (
+        <RailLink key={item.href} {...item} active={isActive(item.href)} />
       ))}
 
       {/* Spacer */}
       <div className="flex-1" />
 
       {/* Bottom nav */}
-      {BOTTOM_ITEMS.map(({ icon: Icon, label, id }) => (
-        <button
-          key={id}
-          title={label}
-          aria-label={label}
-          onClick={() => setActive(id)}
-          className={cn(
-            'w-[38px] h-[38px] rounded-lg flex items-center justify-center transition-colors flex-shrink-0',
-            active === id
-              ? 'bg-white text-[#1a1a1a]'
-              : 'bg-transparent text-[#cfcfcf] hover:bg-[#2c2c2c] hover:text-white'
-          )}
-        >
-          <Icon size={18} strokeWidth={1.6} />
-        </button>
+      {BOTTOM_ITEMS.map((item) => (
+        <RailLink key={item.href} {...item} active={isActive(item.href)} />
       ))}
     </nav>
   );

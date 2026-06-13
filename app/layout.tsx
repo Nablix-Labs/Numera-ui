@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import ToolRail from '@/components/ToolRail';
+import MediaPanel from '@/components/MediaPanel';
 
 export const metadata: Metadata = {
   title: 'Numera — AI Math Tutor',
@@ -14,7 +16,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="h-screen overflow-hidden bg-[#e2e2e2] font-sans">
-        {children}
+        {/* App shell — the tool rail and media panel persist across every route */}
+        <div
+          className="h-screen flex bg-white max-w-[1500px] mx-auto border-x border-[#c8c8c8]"
+          aria-label="Numera AI Math Tutor"
+        >
+          <ToolRail />
+          <MediaPanel />
+          {children}
+        </div>
       </body>
     </html>
   );
