@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { MoreVertical, PanelLeft, PanelRight, Eye, EyeOff } from 'lucide-react';
+import { MoreVertical, PanelLeft, PanelRight, Eye, EyeOff, FileDown } from 'lucide-react';
 import { useNumeraStore } from '@/store/useNumeraStore';
+import { exportNotesPDF } from '@/lib/exportNotes';
 import TutorTile from './TutorTile';
 import VoiceBar from './VoiceBar';
 import Transcript from './Transcript';
@@ -22,6 +23,16 @@ function PanelMenu() {
   const { panelSide, transcriptVisible, togglePanelSide, toggleTranscript } = useNumeraStore();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const saveNotes = async () => {
+    const s = useNumeraStore.getState();
+    await exportNotesPDF({
+      questionNumber: s.questionNumber,
+      questionText: s.questionText,
+      canvasPng: s.canvasExporter?.() ?? null,
+      transcript: s.transcript,
+    });
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -64,6 +75,10 @@ function PanelMenu() {
             {transcriptVisible
               ? <><EyeOff size={15} strokeWidth={1.7} /> Hide transcript</>
               : <><Eye size={15} strokeWidth={1.7} /> Show transcript</>}
+          </button>
+          <div className="h-[1px] bg-[#eaeaea] my-1" />
+          <button className={item} onClick={() => { setOpen(false); void saveNotes(); }}>
+            <FileDown size={15} strokeWidth={1.7} /> Save notes as PDF
           </button>
         </div>
       )}

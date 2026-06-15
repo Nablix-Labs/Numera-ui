@@ -30,7 +30,7 @@ const HELP_TIPS = [
 ];
 
 export default function CanvasStage() {
-  const { questionText, questionNumber, items, setActiveTool } = useNumeraStore();
+  const { questionText, questionNumber, items, setActiveTool, setCanvasExporter } = useNumeraStore();
 
   const exportRef = useRef<(() => string | null) | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -39,7 +39,8 @@ export default function CanvasStage() {
 
   const handleExportReady = useCallback((fn: () => string | null) => {
     exportRef.current = fn;
-  }, []);
+    setCanvasExporter(fn); // expose to the panel menu for "Save as PDF"
+  }, [setCanvasExporter]);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
