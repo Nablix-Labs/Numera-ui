@@ -78,6 +78,28 @@ export interface Participant {
   isLocal?: boolean;
 }
 
+// ─── Group Challenge Mode ───────────────────────────────────────────────────
+// Each student works privately; the AI observes all canvases and drives the
+// shared board. These types model what the student's client renders.
+
+/** A live AI comment shown on the shared board. */
+export interface ChallengeComment {
+  id: string;
+  text: string;
+  tone: 'observe' | 'encourage' | 'hint';
+  timestamp: number;
+}
+
+/** AI selection of work to display on the shared board. */
+export interface Spotlight {
+  kind: 'good' | 'mistake' | 'solution';
+  caption: string;
+  studentName: string | null; // named for good work, null = anonymous
+}
+
+/** Auto-review status of the student's private canvas. */
+export type ReviewStatus = 'idle' | 'reviewing' | 'reviewed';
+
 export interface NumeraState {
   // Session
   sessionId: string | null;
@@ -125,6 +147,15 @@ export interface NumeraState {
   // Learning progress (persisted) — lesson ids the student has marked learned
   completedLessons: string[];
 
+  // Group Challenge Mode
+  challengeActive: boolean;
+  challengeProblem: string;
+  reviewStatus: ReviewStatus;             // auto-review of the private canvas
+  commentary: ChallengeComment[];         // AI live commentary feed
+  spotlight: Spotlight | null;            // work currently on the shared board
+  boardItems: DrawnItem[];                // AI-drawn strokes on the shared board
+  privateFeedback: string | null;         // feedback only this student sees
+
   // Actions
   setSessionId: (id: string) => void;
   setSessionState: (s: SessionState) => void;
@@ -160,6 +191,13 @@ export interface NumeraState {
   setParticipantCursor: (id: string, cursor: { x: number; y: number }) => void;
   addRemoteItem: (item: DrawnItem) => void;
   toggleLessonLearned: (lessonId: string) => void;
+  startChallenge: (problem: string) => void;
+  endChallenge: () => void;
+  setReviewStatus: (s: ReviewStatus) => void;
+  addCommentary: (c: Omit<ChallengeComment, 'id' | 'timestamp'>) => void;
+  setSpotlight: (s: Spotlight | null) => void;
+  addBoardItem: (item: DrawnItem) => void;
+  setPrivateFeedback: (text: string | null) => void;
   reset: () => void;
 }
 
@@ -176,7 +214,9 @@ const initial: Omit<
   | 'toggleTranscript' | 'setToolbarPos' | 'toggleToolbarCollapsed'
   | 'setCanvasExporter' | 'startGroupSession' | 'endGroupSession'
   | 'upsertParticipant' | 'removeParticipant' | 'setParticipantCursor'
-  | 'addRemoteItem' | 'toggleLessonLearned' | 'reset'
+  | 'addRemoteItem' | 'toggleLessonLearned' | 'startChallenge' | 'endChallenge'
+  | 'setReviewStatus' | 'addCommentary' | 'setSpotlight' | 'addBoardItem'
+  | 'setPrivateFeedback' | 'reset'
 > = {
   sessionId: null,
   sessionState: 'idle',
@@ -223,6 +263,13 @@ const initial: Omit<
   participants: [],
   remoteItems: [],
   completedLessons: [],
+  challengeActive: false,
+  challengeProblem: '3x + 5 = 20',
+  reviewStatus: 'idle',
+  commentary: [],
+  spotlight: null,
+  boardItems: [],
+  privateFeedback: null,
 };
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -352,6 +399,40 @@ export const useNumeraStore = create<NumeraState>()(
         ? s.completedLessons.filter((id) => id !== lessonId)
         : [...s.completedLessons, lessonId],
     })),
+
+  startChallenge: (challengeProblem) =>
+    set({
+      challengeActive: true,
+      challengeProblem,
+      sessionMode: 'group',
+      reviewStatus: 'idle',
+      commentary: [],
+      spotlight: null,
+      boardItems: [],
+      privateFeedback: null,
+    }),
+  endChallenge: () =>
+    set({
+      challengeActive: false,
+      sessionMode: 'solo',
+      participants: [],
+      reviewStatus: 'idle',
+      commentary: [],
+      spotlight: null,
+      boardItems: [],
+      privateFeedback: null,
+    }),
+  setReviewStatus: (reviewStatus) => set({ reviewStatus }),
+  addCommentary: (c) =>
+    set((s) => ({
+      commentary: [
+        ...s.commentary,
+        { ...c, id: crypto.randomUUID(), timestamp: Date.now() },
+      ].slice(-8), // keep the feed short
+    })),
+  setSpotlight: (spotlight) => set({ spotlight }),
+  addBoardItem: (item) => set((s) => ({ boardItems: [...s.boardItems, item] })),
+  setPrivateFeedback: (privateFeedback) => set({ privateFeedback }),
 
   reset: () => set({ ...initial }),
     }),
