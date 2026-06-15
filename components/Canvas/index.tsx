@@ -158,10 +158,8 @@ export default function CanvasStage() {
         </button>
       </div>
 
-      {/* Floating toolbar */}
-      <div className="z-20 absolute bottom-0 left-0 right-0">
-        <Toolbar onCheckWork={handleCheckWork} />
-      </div>
+      {/* Floating toolbar — self-positioning & draggable within the canvas */}
+      <Toolbar onCheckWork={handleCheckWork} />
     </main>
   );
 }
