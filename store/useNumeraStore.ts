@@ -68,6 +68,15 @@ export interface TranscriptMessage {
   timestamp: number;
 }
 
+/** A participant in a group/live session. Cursor is normalised 0–1. */
+export interface Participant {
+  id: string;
+  name: string;
+  color: string;
+  cursor: { x: number; y: number } | null;
+  isLocal?: boolean;
+}
+
 export interface NumeraState {
   // Session
   sessionId: string | null;
@@ -107,6 +116,11 @@ export interface NumeraState {
   // Runtime: canvas PNG exporter, registered by the canvas for PDF notes
   canvasExporter: (() => string | null) | null;
 
+  // Group / live session (collaboration)
+  sessionMode: 'solo' | 'group';
+  participants: Participant[];   // remote peers (local user not shown to self)
+  remoteItems: DrawnItem[];      // strokes drawn by peers, in their colours
+
   // Actions
   setSessionId: (id: string) => void;
   setSessionState: (s: SessionState) => void;
@@ -135,6 +149,12 @@ export interface NumeraState {
   setToolbarPos: (pos: { x: number; y: number } | null) => void;
   toggleToolbarCollapsed: () => void;
   setCanvasExporter: (fn: (() => string | null) | null) => void;
+  startGroupSession: () => void;
+  endGroupSession: () => void;
+  upsertParticipant: (p: Participant) => void;
+  removeParticipant: (id: string) => void;
+  setParticipantCursor: (id: string, cursor: { x: number; y: number }) => void;
+  addRemoteItem: (item: DrawnItem) => void;
   reset: () => void;
 }
 
@@ -149,7 +169,9 @@ const initial: Omit<
   | 'clearCanvas' | 'applyCanvasDraw' | 'clearTutorMarks'
   | 'setInputMode' | 'setTextInput' | 'setPanelSide' | 'togglePanelSide'
   | 'toggleTranscript' | 'setToolbarPos' | 'toggleToolbarCollapsed'
-  | 'setCanvasExporter' | 'reset'
+  | 'setCanvasExporter' | 'startGroupSession' | 'endGroupSession'
+  | 'upsertParticipant' | 'removeParticipant' | 'setParticipantCursor'
+  | 'addRemoteItem' | 'reset'
 > = {
   sessionId: null,
   sessionState: 'idle',
@@ -192,6 +214,9 @@ const initial: Omit<
   toolbarPos: null,
   toolbarCollapsed: false,
   canvasExporter: null,
+  sessionMode: 'solo',
+  participants: [],
+  remoteItems: [],
 };
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -293,6 +318,25 @@ export const useNumeraStore = create<NumeraState>((set) => ({
   setToolbarPos: (toolbarPos) => set({ toolbarPos }),
   toggleToolbarCollapsed: () => set((s) => ({ toolbarCollapsed: !s.toolbarCollapsed })),
   setCanvasExporter: (canvasExporter) => set({ canvasExporter }),
+
+  startGroupSession: () => set({ sessionMode: 'group' }),
+  endGroupSession: () => set({ sessionMode: 'solo', participants: [], remoteItems: [] }),
+  upsertParticipant: (p) =>
+    set((s) => {
+      const exists = s.participants.some((x) => x.id === p.id);
+      return {
+        participants: exists
+          ? s.participants.map((x) => (x.id === p.id ? { ...x, ...p } : x))
+          : [...s.participants, p],
+      };
+    }),
+  removeParticipant: (id) =>
+    set((s) => ({ participants: s.participants.filter((p) => p.id !== id) })),
+  setParticipantCursor: (id, cursor) =>
+    set((s) => ({
+      participants: s.participants.map((p) => (p.id === id ? { ...p, cursor } : p)),
+    })),
+  addRemoteItem: (item) => set((s) => ({ remoteItems: [...s.remoteItems, item] })),
 
   reset: () => set({ ...initial }),
 }));

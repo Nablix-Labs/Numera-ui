@@ -29,7 +29,7 @@ export default function DrawingCanvas({ onExportReady }: DrawingCanvasProps) {
   const isDrawing = useRef(false);
   const startPos = useRef<{ x: number; y: number } | null>(null);
 
-  const { activeTool, strokeColor, strokeWidth, items, addItem, undo, redo } =
+  const { activeTool, strokeColor, strokeWidth, items, remoteItems, addItem, undo, redo } =
     useNumeraStore();
 
   // `draftRef` is the source of truth for the in-progress item; `draft` state
@@ -213,6 +213,7 @@ export default function DrawingCanvas({ onExportReady }: DrawingCanvasProps) {
         style={{ cursor }}
       >
         <Layer>
+          {remoteItems.map(renderItem)}
           {items.map(renderItem)}
           {draft && renderItem(draft)}
         </Layer>
