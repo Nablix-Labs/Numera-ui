@@ -1,49 +1,79 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+import { MoreVertical, PanelLeft, PanelRight, Eye, EyeOff } from 'lucide-react';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import TutorTile from './TutorTile';
 import VoiceBar from './VoiceBar';
 import Transcript from './Transcript';
+import { cn } from '@/lib/cn';
 
-/** Student camera placeholder tile */
-function StudentTile() {
+const stateLabel: Record<string, string> = {
+  idle:    'Idle',
+  state_1: 'Warm-up',
+  state_2: 'Explanation',
+  state_3: 'Step-by-step',
+  state_4: 'Guided Practice',
+  state_5: 'Review',
+};
+
+/** ⋮ overflow menu — panel side + transcript visibility. */
+function PanelMenu() {
+  const { panelSide, transcriptVisible, togglePanelSide, toggleTranscript } = useNumeraStore();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const item = 'w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-[#1a1a1a] hover:bg-[#f4f4f4] transition-colors text-left';
+
   return (
-    <div
-      className="relative border border-[#9a9a9a] rounded-md overflow-hidden"
-      style={{ aspectRatio: '4/3' }}
-      aria-label="Student camera"
-    >
-      {/* Striped placeholder */}
-      <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(45deg,#ededed,#ededed 9px,#f7f7f7 9px,#f7f7f7 18px)',
-        }}
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Panel options"
+        aria-expanded={open}
+        className="w-6 h-6 -mr-1 rounded-md flex items-center justify-center text-[#7a7a7a] hover:bg-[#f4f4f4] hover:text-[#1a1a1a] transition-colors"
       >
-        <span className="font-mono text-[10px] text-[#9a9a9a] tracking-tight">
-          [ student camera ]
-        </span>
-      </div>
-      {/* Name tag */}
-      <div className="absolute left-2 bottom-2 bg-[rgba(26,26,26,0.82)] text-white text-[9.5px] px-2 py-0.5 rounded">
-        You
-      </div>
+        <MoreVertical size={16} strokeWidth={1.8} />
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-[calc(100%+6px)] z-30 w-44 bg-white border border-[#9a9a9a] rounded-lg overflow-hidden py-1"
+          style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.14)' }}
+          role="menu"
+        >
+          <button className={item} onClick={() => { togglePanelSide(); setOpen(false); }}>
+            {panelSide === 'left'
+              ? <><PanelRight size={15} strokeWidth={1.7} /> Move panel right</>
+              : <><PanelLeft size={15} strokeWidth={1.7} /> Move panel left</>}
+          </button>
+          <button className={item} onClick={() => { toggleTranscript(); setOpen(false); }}>
+            {transcriptVisible
+              ? <><EyeOff size={15} strokeWidth={1.7} /> Hide transcript</>
+              : <><Eye size={15} strokeWidth={1.7} /> Show transcript</>}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function MediaPanel() {
   const sessionState = useNumeraStore((s) => s.sessionState);
-
-  const stateLabel: Record<string, string> = {
-    idle:    'Idle',
-    state_1: 'Warm-up',
-    state_2: 'Explanation',
-    state_3: 'Step-by-step',
-    state_4: 'Guided Practice',
-    state_5: 'Review',
-  };
+  const transcriptVisible = useNumeraStore((s) => s.transcriptVisible);
 
   return (
     <aside
@@ -57,23 +87,27 @@ export default function MediaPanel() {
           <div className="text-sm font-semibold tracking-[0.4px]">Numera</div>
           <div className="text-[8.5px] font-normal text-[#9a9a9a] tracking-[1.5px] uppercase">by Nablix</div>
         </div>
-        <div className="border border-[#9a9a9a] rounded-full px-2.5 py-1 text-[10px] tracking-[0.4px] flex items-center gap-1.5 text-[#7a7a7a]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#1a1a1a] inline-block" />
-          {stateLabel[sessionState] ?? 'Guided'}
+        <div className="flex items-center gap-2">
+          <div className="border border-[#9a9a9a] rounded-full px-2.5 py-1 text-[10px] tracking-[0.4px] flex items-center gap-1.5 text-[#7a7a7a]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#1a1a1a] inline-block" />
+            {stateLabel[sessionState] ?? 'Guided'}
+          </div>
+          <PanelMenu />
         </div>
       </div>
 
-      {/* Video tiles */}
+      {/* Tutor tile */}
       <div className="px-3.5 pt-3.5 pb-1.5 flex flex-col gap-3 flex-shrink-0">
         <TutorTile />
-        <StudentTile />
       </div>
 
       {/* Voice controls */}
       <VoiceBar />
 
-      {/* Transcript */}
-      <Transcript />
+      {/* Transcript (optional) */}
+      {transcriptVisible
+        ? <Transcript />
+        : <div className={cn('flex-1 min-h-0')} aria-hidden="true" />}
     </aside>
   );
 }

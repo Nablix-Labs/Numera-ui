@@ -98,6 +98,12 @@ export interface NumeraState {
   inputMode: InputMode;
   textInput: string;
 
+  // UI preferences (guided-learning layout)
+  panelSide: 'left' | 'right';        // assistant panel side relative to canvas
+  transcriptVisible: boolean;         // transcript can be hidden
+  toolbarPos: { x: number; y: number } | null; // null = default docked position
+  toolbarCollapsed: boolean;          // collapsed to a small bubble
+
   // Actions
   setSessionId: (id: string) => void;
   setSessionState: (s: SessionState) => void;
@@ -120,6 +126,11 @@ export interface NumeraState {
   clearTutorMarks: () => void;
   setInputMode: (m: InputMode) => void;
   setTextInput: (v: string) => void;
+  setPanelSide: (s: 'left' | 'right') => void;
+  togglePanelSide: () => void;
+  toggleTranscript: () => void;
+  setToolbarPos: (pos: { x: number; y: number } | null) => void;
+  toggleToolbarCollapsed: () => void;
   reset: () => void;
 }
 
@@ -132,7 +143,8 @@ const initial: Omit<
   | 'addTranscriptMessage' | 'updatePartialTranscript' | 'setActiveTool'
   | 'setStrokeColor' | 'setStrokeWidth' | 'addItem' | 'undo' | 'redo'
   | 'clearCanvas' | 'applyCanvasDraw' | 'clearTutorMarks'
-  | 'setInputMode' | 'setTextInput' | 'reset'
+  | 'setInputMode' | 'setTextInput' | 'setPanelSide' | 'togglePanelSide'
+  | 'toggleTranscript' | 'setToolbarPos' | 'toggleToolbarCollapsed' | 'reset'
 > = {
   sessionId: null,
   sessionState: 'idle',
@@ -170,6 +182,10 @@ const initial: Omit<
   tutorElements: [],
   inputMode: 'voice',
   textInput: '',
+  panelSide: 'left',
+  transcriptVisible: true,
+  toolbarPos: null,
+  toolbarCollapsed: false,
 };
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -264,6 +280,12 @@ export const useNumeraStore = create<NumeraState>((set) => ({
 
   setInputMode: (inputMode) => set({ inputMode }),
   setTextInput: (textInput) => set({ textInput }),
+
+  setPanelSide: (panelSide) => set({ panelSide }),
+  togglePanelSide: () => set((s) => ({ panelSide: s.panelSide === 'left' ? 'right' : 'left' })),
+  toggleTranscript: () => set((s) => ({ transcriptVisible: !s.transcriptVisible })),
+  setToolbarPos: (toolbarPos) => set({ toolbarPos }),
+  toggleToolbarCollapsed: () => set((s) => ({ toolbarCollapsed: !s.toolbarCollapsed })),
 
   reset: () => set({ ...initial }),
 }));

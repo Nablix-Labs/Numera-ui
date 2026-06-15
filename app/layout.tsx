@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import ToolRail from '@/components/ToolRail';
-import MediaPanel from '@/components/MediaPanel';
+import AppShell from '@/components/AppShell';
 
 export const metadata: Metadata = {
   title: 'Numera — AI Math Tutor',
@@ -22,8 +22,7 @@ export default function RootLayout({
           aria-label="Numera AI Math Tutor"
         >
           <ToolRail />
-          <MediaPanel />
-          {children}
+          <AppShell>{children}</AppShell>
         </div>
       </body>
     </html>
