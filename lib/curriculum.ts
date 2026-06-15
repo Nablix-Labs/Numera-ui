@@ -1,12 +1,23 @@
 /**
  * Curriculum mock data for the learning library (frontend-only).
  *
- * Shape: topic → subtopic → lesson, each lesson carrying a learning status.
- * In production this comes from the backend; the UI only reads it. Kept here
- * behind a tiny accessor so swapping to a real source is a one-file change.
+ * Shape: topic → subtopic → lesson, each lesson carrying a learning status and
+ * each subtopic a UK Key Stage. In production this comes from the backend; the
+ * UI only reads it. Kept here behind small accessors so swapping to a real
+ * source is a one-file change.
+ *
+ * Key Stages (UK, A-Level aligned):
+ *   KS3 = ages 11–13 · KS4 = ages 14–16 (GCSE) · KS5 = ages 17–18 (A-Level)
  */
 
 export type LessonStatus = 'mastered' | 'in-progress' | 'not-started';
+export type KeyStage = 'KS3' | 'KS4' | 'KS5';
+
+export const KEY_STAGES: { id: KeyStage; label: string; ages: string }[] = [
+  { id: 'KS3', label: 'KS3', ages: 'Ages 11–13' },
+  { id: 'KS4', label: 'KS4', ages: 'Ages 14–16 · GCSE' },
+  { id: 'KS5', label: 'KS5', ages: 'Ages 17–18 · A-Level' },
+];
 
 export interface Lesson {
   id: string;
@@ -17,6 +28,7 @@ export interface Lesson {
 export interface Subtopic {
   id: string;
   title: string;
+  keyStage: KeyStage;
   lessons: Lesson[];
 }
 
@@ -36,6 +48,7 @@ export const CURRICULUM: Topic[] = [
       {
         id: 'linear-equations',
         title: 'Linear equations',
+        keyStage: 'KS3',
         lessons: [
           { id: 'one-step', title: 'One-step equations', status: 'mastered' },
           { id: 'two-step', title: 'Two-step equations', status: 'mastered' },
@@ -46,10 +59,20 @@ export const CURRICULUM: Topic[] = [
       {
         id: 'expressions',
         title: 'Expressions',
+        keyStage: 'KS4',
         lessons: [
           { id: 'simplifying', title: 'Simplifying expressions', status: 'mastered' },
           { id: 'expanding', title: 'Expanding brackets', status: 'in-progress' },
           { id: 'factorising', title: 'Factorising', status: 'not-started' },
+        ],
+      },
+      {
+        id: 'calculus',
+        title: 'Intro to calculus',
+        keyStage: 'KS5',
+        lessons: [
+          { id: 'differentiation', title: 'Differentiation basics', status: 'not-started' },
+          { id: 'gradients', title: 'Gradients of curves', status: 'not-started' },
         ],
       },
     ],
@@ -62,6 +85,7 @@ export const CURRICULUM: Topic[] = [
       {
         id: 'fractions',
         title: 'Fractions',
+        keyStage: 'KS3',
         lessons: [
           { id: 'equivalent', title: 'Equivalent fractions', status: 'mastered' },
           { id: 'add-subtract', title: 'Adding & subtracting', status: 'in-progress' },
@@ -71,6 +95,7 @@ export const CURRICULUM: Topic[] = [
       {
         id: 'ratio',
         title: 'Ratio & proportion',
+        keyStage: 'KS4',
         lessons: [
           { id: 'simplify-ratio', title: 'Simplifying ratios', status: 'not-started' },
           { id: 'sharing', title: 'Sharing in a ratio', status: 'not-started' },
@@ -86,6 +111,7 @@ export const CURRICULUM: Topic[] = [
       {
         id: 'angles',
         title: 'Angles',
+        keyStage: 'KS3',
         lessons: [
           { id: 'angle-rules', title: 'Angle rules', status: 'not-started' },
           { id: 'polygons', title: 'Angles in polygons', status: 'not-started' },
@@ -94,6 +120,7 @@ export const CURRICULUM: Topic[] = [
       {
         id: 'area',
         title: 'Area & perimeter',
+        keyStage: 'KS4',
         lessons: [
           { id: 'rectangles', title: 'Rectangles & triangles', status: 'not-started' },
           { id: 'circles', title: 'Circles', status: 'not-started' },
@@ -109,6 +136,7 @@ export const CURRICULUM: Topic[] = [
       {
         id: 'averages',
         title: 'Averages',
+        keyStage: 'KS3',
         lessons: [
           { id: 'mean-median-mode', title: 'Mean, median & mode', status: 'not-started' },
           { id: 'range', title: 'Range', status: 'not-started' },
@@ -146,4 +174,9 @@ export function topicProgressWith(t: Topic, completed: string[]): number {
   if (all.length === 0) return 0;
   const done = all.filter((l) => effectiveStatus(l, completed) === 'mastered').length;
   return Math.round((done / all.length) * 100);
+}
+
+/** Distinct Key Stages a topic spans. */
+export function topicKeyStages(t: Topic): KeyStage[] {
+  return Array.from(new Set(t.subtopics.map((s) => s.keyStage)));
 }

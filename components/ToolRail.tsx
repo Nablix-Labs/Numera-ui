@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Pencil, BookOpen, Users, Swords, Folder, Flag,
+  Pencil, BookOpen, Target, Users, Swords, Folder, Flag, Zap,
   Bell, Clock, Headphones,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -11,8 +11,10 @@ import { cn } from '@/lib/cn';
 const TOP_ITEMS = [
   { icon: Pencil,   label: 'Lesson',         href: '/' },
   { icon: BookOpen, label: 'Workbook',       href: '/workbook' },
-  { icon: Users,    label: 'People',         href: '/people' },
+  { icon: Target,   label: 'Practice',       href: '/practice' },
   { icon: Swords,   label: 'Group Challenge',href: '/challenge' },
+  { icon: Zap,      label: 'Revise',         href: '/revise' },
+  { icon: Users,    label: 'People',         href: '/people' },
   { icon: Folder,   label: 'Files',          href: '/files' },
   { icon: Flag,     label: 'Flagged',        href: '/flagged' },
 ];

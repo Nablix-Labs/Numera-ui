@@ -36,8 +36,11 @@ export default function TopicPage({ params }: { params: { topic: string } }) {
       <div className="flex flex-col gap-7 max-w-3xl">
         {topic.subtopics.map((sub) => (
           <section key={sub.id}>
-            <div className="text-[11px] font-semibold tracking-widest uppercase text-[#9a9a9a] mb-2.5">
-              {sub.title}
+            <div className="flex items-center gap-2 mb-2.5">
+              <span className="text-[11px] font-semibold tracking-widest uppercase text-[#9a9a9a]">
+                {sub.title}
+              </span>
+              <Chip>{sub.keyStage}</Chip>
             </div>
             <div className="rounded-lg border border-[#c8c8c8] divide-y divide-[#eaeaea] overflow-hidden">
               {sub.lessons.map((l) => {
