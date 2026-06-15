@@ -6,6 +6,7 @@
  * This store holds only UI-relevant state derived from backend events.
  */
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -121,6 +122,9 @@ export interface NumeraState {
   participants: Participant[];   // remote peers (local user not shown to self)
   remoteItems: DrawnItem[];      // strokes drawn by peers, in their colours
 
+  // Learning progress (persisted) — lesson ids the student has marked learned
+  completedLessons: string[];
+
   // Actions
   setSessionId: (id: string) => void;
   setSessionState: (s: SessionState) => void;
@@ -155,6 +159,7 @@ export interface NumeraState {
   removeParticipant: (id: string) => void;
   setParticipantCursor: (id: string, cursor: { x: number; y: number }) => void;
   addRemoteItem: (item: DrawnItem) => void;
+  toggleLessonLearned: (lessonId: string) => void;
   reset: () => void;
 }
 
@@ -171,7 +176,7 @@ const initial: Omit<
   | 'toggleTranscript' | 'setToolbarPos' | 'toggleToolbarCollapsed'
   | 'setCanvasExporter' | 'startGroupSession' | 'endGroupSession'
   | 'upsertParticipant' | 'removeParticipant' | 'setParticipantCursor'
-  | 'addRemoteItem' | 'reset'
+  | 'addRemoteItem' | 'toggleLessonLearned' | 'reset'
 > = {
   sessionId: null,
   sessionState: 'idle',
@@ -217,11 +222,14 @@ const initial: Omit<
   sessionMode: 'solo',
   participants: [],
   remoteItems: [],
+  completedLessons: [],
 };
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
-export const useNumeraStore = create<NumeraState>((set) => ({
+export const useNumeraStore = create<NumeraState>()(
+  persist(
+    (set) => ({
   ...initial,
 
   setSessionId: (id) => set({ sessionId: id }),
@@ -338,5 +346,29 @@ export const useNumeraStore = create<NumeraState>((set) => ({
     })),
   addRemoteItem: (item) => set((s) => ({ remoteItems: [...s.remoteItems, item] })),
 
+  toggleLessonLearned: (lessonId) =>
+    set((s) => ({
+      completedLessons: s.completedLessons.includes(lessonId)
+        ? s.completedLessons.filter((id) => id !== lessonId)
+        : [...s.completedLessons, lessonId],
+    })),
+
   reset: () => set({ ...initial }),
-}));
+    }),
+    {
+      name: 'numera-store',
+      storage: createJSONStorage(() => localStorage),
+      // Persist only durable UI preferences + learning progress — never
+      // session/canvas/transcript state, which is backend-driven & ephemeral.
+      partialize: (s) => ({
+        panelSide: s.panelSide,
+        transcriptVisible: s.transcriptVisible,
+        toolbarPos: s.toolbarPos,
+        toolbarCollapsed: s.toolbarCollapsed,
+        completedLessons: s.completedLessons,
+      }),
+      // Hydrate manually after mount to avoid SSR/client mismatch (see AppShell).
+      skipHydration: true,
+    }
+  )
+);

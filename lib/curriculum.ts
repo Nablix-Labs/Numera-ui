@@ -134,3 +134,16 @@ export function topicProgress(t: Topic): number {
 export function getTopic(id: string): Topic | undefined {
   return CURRICULUM.find((t) => t.id === id);
 }
+
+/** Status with the student's persisted completions applied as overrides. */
+export function effectiveStatus(lesson: Lesson, completed: string[]): LessonStatus {
+  return completed.includes(lesson.id) ? 'mastered' : lesson.status;
+}
+
+/** Topic progress %, counting persisted completions. */
+export function topicProgressWith(t: Topic, completed: string[]): number {
+  const all = topicLessons(t);
+  if (all.length === 0) return 0;
+  const done = all.filter((l) => effectiveStatus(l, completed) === 'mastered').length;
+  return Math.round((done / all.length) * 100);
+}

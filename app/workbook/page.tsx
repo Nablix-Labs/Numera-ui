@@ -1,9 +1,14 @@
+'use client';
+
 import Link from 'next/link';
 import { Folder } from 'lucide-react';
 import PageShell, { ProgressBar } from '@/components/PageShell';
-import { CURRICULUM, topicLessons, topicProgress } from '@/lib/curriculum';
+import { useNumeraStore } from '@/store/useNumeraStore';
+import { CURRICULUM, topicLessons, topicProgressWith } from '@/lib/curriculum';
 
 export default function WorkbookPage() {
+  const completed = useNumeraStore((s) => s.completedLessons);
+
   return (
     <PageShell
       title="Workbook"
@@ -12,7 +17,7 @@ export default function WorkbookPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {CURRICULUM.map((t) => {
           const lessons = topicLessons(t);
-          const pct = topicProgress(t);
+          const pct = topicProgressWith(t, completed);
           return (
             <Link
               key={t.id}

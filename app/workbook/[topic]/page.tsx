@@ -1,13 +1,11 @@
+'use client';
+
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Check } from 'lucide-react';
 import PageShell, { Chip } from '@/components/PageShell';
-import { CURRICULUM, getTopic, type LessonStatus } from '@/lib/curriculum';
-
-// Pre-render a page per topic
-export function generateStaticParams() {
-  return CURRICULUM.map((t) => ({ topic: t.id }));
-}
+import { useNumeraStore } from '@/store/useNumeraStore';
+import { getTopic, effectiveStatus, type LessonStatus } from '@/lib/curriculum';
 
 const ACTION: Record<LessonStatus, string> = {
   mastered: 'Learn again',
@@ -17,6 +15,9 @@ const ACTION: Record<LessonStatus, string> = {
 
 export default function TopicPage({ params }: { params: { topic: string } }) {
   const topic = getTopic(params.topic);
+  const completed = useNumeraStore((s) => s.completedLessons);
+  const toggleLessonLearned = useNumeraStore((s) => s.toggleLessonLearned);
+
   if (!topic) notFound();
 
   return (
@@ -40,29 +41,36 @@ export default function TopicPage({ params }: { params: { topic: string } }) {
             </div>
             <div className="rounded-lg border border-[#c8c8c8] divide-y divide-[#eaeaea] overflow-hidden">
               {sub.lessons.map((l) => {
-                const done = l.status === 'mastered';
+                const status = effectiveStatus(l, completed);
+                const done = status === 'mastered';
                 return (
                   <div key={l.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#f9f9f9] transition-colors">
-                    {/* status circle */}
-                    <span
+                    {/* status toggle — mark learned / unlearned */}
+                    <button
+                      onClick={() => toggleLessonLearned(l.id)}
+                      title={done ? 'Mark as not learned' : 'Mark as learned'}
+                      aria-label={done ? `Mark ${l.title} as not learned` : `Mark ${l.title} as learned`}
+                      aria-pressed={done}
                       className={
-                        'flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center border ' +
-                        (done ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white' : 'border-[#9a9a9a] text-transparent')
+                        'flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center border transition-colors ' +
+                        (done
+                          ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
+                          : 'border-[#9a9a9a] text-transparent hover:border-[#1a1a1a]')
                       }
                     >
-                      {done && <Check size={13} strokeWidth={2.4} />}
-                    </span>
+                      <Check size={13} strokeWidth={2.4} />
+                    </button>
                     <div className="min-w-0 flex-1">
                       <div className={'text-[13.5px] ' + (done ? 'text-[#7a7a7a]' : 'text-[#1a1a1a] font-medium')}>
                         {l.title}
                       </div>
                     </div>
-                    {l.status === 'in-progress' && <Chip>In progress</Chip>}
+                    {status === 'in-progress' && <Chip>In progress</Chip>}
                     <Link
                       href="/"
                       className="flex-shrink-0 inline-flex items-center justify-center rounded-md border border-[#1a1a1a] text-[#1a1a1a] text-[12px] font-semibold px-3.5 py-1.5 hover:bg-[#1a1a1a] hover:text-white transition-colors"
                     >
-                      {ACTION[l.status]}
+                      {ACTION[status]}
                     </Link>
                   </div>
                 );
