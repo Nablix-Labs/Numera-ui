@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Folder } from 'lucide-react';
+import { Folder, ClipboardCheck } from 'lucide-react';
 import PageShell, { ProgressBar, Chip } from '@/components/PageShell';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import {
@@ -23,6 +23,11 @@ export default function WorkbookPage() {
     <PageShell
       title="Workbook"
       subtitle="Your topics and subtopics — UK curriculum, A-Level aligned."
+      action={
+        <Link href="/diagnostic" className="inline-flex items-center gap-1.5 rounded-md border border-[#9a9a9a] bg-white px-3.5 py-2 text-[12px] font-semibold text-[#1a1a1a] hover:bg-[#f4f4f4] transition-colors">
+          <ClipboardCheck size={15} strokeWidth={1.8} /> Take diagnostic
+        </Link>
+      }
     >
       {/* Key Stage filter */}
       <div className="flex items-center gap-2 mb-5">

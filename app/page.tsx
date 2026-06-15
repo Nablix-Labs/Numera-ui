@@ -10,12 +10,14 @@
 
 import SlideDots from '@/components/SlideDots';
 import CanvasStage from '@/components/Canvas';
+import ContinuityCheck from '@/components/ContinuityCheck';
 
 export default function LessonPage() {
   return (
     <>
       <SlideDots />
       <CanvasStage />
+      <ContinuityCheck />
     </>
   );
 }
