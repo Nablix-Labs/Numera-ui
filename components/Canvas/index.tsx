@@ -16,6 +16,7 @@ import dynamic from 'next/dynamic';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import BarModel from './BarModel';
 import Toolbar from './Toolbar';
+import TeachBack from './TeachBack';
 
 // react-konva requires client-only rendering (no SSR)
 const DrawingCanvas = dynamic(() => import('./DrawingCanvas'), { ssr: false });
@@ -95,6 +96,9 @@ export default function CanvasStage() {
       <div className="absolute inset-0 z-[1]">
         <DrawingCanvas onExportReady={handleExportReady} />
       </div>
+
+      {/* Teaching-back prompt */}
+      <TeachBack />
 
       {/* Check-work feedback toast */}
       {toast && (

@@ -8,12 +8,13 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Users, Copy, Check, LogOut, Sparkles, X } from 'lucide-react';
+import { Users, Copy, Check, LogOut, Sparkles, X, LayoutGrid, User } from 'lucide-react';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import { useChallenge } from '@/hooks/useChallenge';
 import PrivateCanvas from '@/components/Challenge/PrivateCanvas';
 import SharedBoard from '@/components/Challenge/SharedBoard';
 import AITutorBar from '@/components/Challenge/AITutorBar';
+import TeacherView from '@/components/Challenge/TeacherView';
 
 function initials(name: string) {
   return name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase();
@@ -27,6 +28,7 @@ export default function ChallengePage() {
   } = useNumeraStore();
 
   const [copied, setCopied] = useState(false);
+  const [teacherView, setTeacherView] = useState(false);
   const fbTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-dismiss private feedback after a while
@@ -92,6 +94,16 @@ export default function ChallengePage() {
               </span>
             ))}
           </div>
+          {/* Teacher/student view toggle (full visibility for supervision) */}
+          <button
+            onClick={() => setTeacherView((v) => !v)}
+            title={teacherView ? 'Switch to your canvas' : 'Teacher view — see all canvases'}
+            className="flex items-center gap-1.5 rounded-full border border-[#9a9a9a] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#1a1a1a] hover:bg-[#f4f4f4] transition-colors"
+          >
+            {teacherView
+              ? <><User size={14} strokeWidth={1.8} /> My canvas</>
+              : <><LayoutGrid size={14} strokeWidth={1.8} /> Teacher view</>}
+          </button>
           {/* Copy invite */}
           <button onClick={copy} className="flex items-center gap-1.5 rounded-full border border-[#9a9a9a] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#1a1a1a] hover:bg-[#f4f4f4] transition-colors">
             {copied ? <><Check size={14} strokeWidth={2} /> Copied</> : <><Copy size={14} strokeWidth={1.8} /> Invite</>}
@@ -103,9 +115,9 @@ export default function ChallengePage() {
         </div>
       </header>
 
-      {/* Body: private canvas + shared board */}
+      {/* Body: private canvas (or teacher overview) + shared board */}
       <div className="flex-1 flex min-h-0 relative">
-        <PrivateCanvas />
+        {teacherView ? <TeacherView /> : <PrivateCanvas />}
         <SharedBoard />
 
         {/* Private feedback — only this student sees it */}
