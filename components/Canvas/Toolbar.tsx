@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  Pen, Pencil, Eraser, Ruler, Square, Circle, Triangle,
+  Pen, Pencil, Highlighter, Eraser, Ruler, Square, Circle, Triangle,
   Undo2, Redo2, CheckCircle2, Trash2, MousePointerClick, Brush,
   GripVertical, GripHorizontal, ChevronDown,
 } from 'lucide-react';
@@ -88,6 +88,7 @@ export default function Toolbar({ onCheckWork }: ToolbarProps) {
 
   const ActiveToolIcon =
     activeTool === 'pen' ? Pen : activeTool === 'pencil' ? Pencil
+    : activeTool === 'highlighter' ? Highlighter
     : activeTool === 'eraser' ? Eraser : activeTool === 'ruler' ? Ruler
     : SHAPES.find((s) => s.kind === shapeKind)!.Icon;
 
@@ -125,6 +126,9 @@ export default function Toolbar({ onCheckWork }: ToolbarProps) {
           </button>
           <button title="Pencil" aria-label="pencil" aria-pressed={activeTool === 'pencil'} onClick={() => setActiveTool('pencil')} className={btn(activeTool === 'pencil')}>
             <Pencil size={18} strokeWidth={1.7} />
+          </button>
+          <button title="Highlighter" aria-label="highlighter" aria-pressed={activeTool === 'highlighter'} onClick={() => setActiveTool('highlighter')} className={btn(activeTool === 'highlighter')}>
+            <Highlighter size={18} strokeWidth={1.7} />
           </button>
 
           {/* Eraser with options */}

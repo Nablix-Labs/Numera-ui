@@ -18,7 +18,7 @@ export type SessionState =
   | 'state_4'   // Student work
   | 'state_5';  // Review
 
-export type DrawingTool = 'pen' | 'pencil' | 'eraser' | 'shape' | 'ruler';
+export type DrawingTool = 'pen' | 'pencil' | 'highlighter' | 'eraser' | 'shape' | 'ruler';
 export type ShapeKind = 'rect' | 'circle' | 'triangle';
 export type EraserMode = 'stroke' | 'object';
 
@@ -34,7 +34,7 @@ export type InputMode = 'voice' | 'text' | 'canvas';
  * `size` is the stroke width in px.
  */
 export type DrawnItem =
-  | { id: string; kind: 'stroke'; tool: 'pen' | 'pencil' | 'eraser'; points: number[]; color: string; size: number }
+  | { id: string; kind: 'stroke'; tool: 'pen' | 'pencil' | 'highlighter' | 'eraser'; points: number[]; color: string; size: number }
   | { id: string; kind: 'line'; points: number[]; color: string; size: number }
   | { id: string; kind: 'rect'; x: number; y: number; w: number; h: number; color: string; size: number }
   | { id: string; kind: 'ellipse'; x: number; y: number; w: number; h: number; color: string; size: number }

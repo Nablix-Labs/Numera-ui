@@ -78,15 +78,20 @@ export default function DrawingCanvas({ onExportReady }: DrawingCanvasProps) {
       startPos.current = { x: pos.x, y: pos.y };
       const id = crypto.randomUUID();
 
-      if (activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'eraser') {
+      if (activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'highlighter' || activeTool === 'eraser') {
         const isEraser = activeTool === 'eraser';
+        const size =
+          isEraser ? strokeWidth * 6
+          : activeTool === 'highlighter' ? strokeWidth * 5
+          : activeTool === 'pencil' ? Math.max(1, strokeWidth - 1)
+          : strokeWidth;
         setDraftItem({
           id,
           kind: 'stroke',
           tool: activeTool,
           points: [pos.x, pos.y],
           color: isEraser ? '#ffffff' : strokeColor,
-          size: isEraser ? strokeWidth * 6 : activeTool === 'pencil' ? Math.max(1, strokeWidth - 1) : strokeWidth,
+          size,
         });
       } else if (activeTool === 'ruler') {
         setDraftItem({ id, kind: 'line', points: [pos.x, pos.y, pos.x, pos.y], color: strokeColor, size: strokeWidth });
@@ -190,6 +195,7 @@ export default function DrawingCanvas({ onExportReady }: DrawingCanvasProps) {
     }
     // stroke / line / triangle → Line
     const isPencil = item.kind === 'stroke' && item.tool === 'pencil';
+    const isHighlighter = item.kind === 'stroke' && item.tool === 'highlighter';
     const isEraser = item.kind === 'stroke' && item.tool === 'eraser';
     return (
       <Line
@@ -197,12 +203,14 @@ export default function DrawingCanvas({ onExportReady }: DrawingCanvasProps) {
         points={item.points}
         stroke={item.color}
         strokeWidth={item.size}
-        opacity={isPencil ? 0.55 : 1}
+        opacity={isHighlighter ? 0.35 : isPencil ? 0.55 : 1}
         tension={item.kind === 'stroke' ? 0.5 : 0}
         closed={item.kind === 'triangle'}
-        lineCap="round"
+        lineCap={isHighlighter ? 'butt' : 'round'}
         lineJoin="round"
-        globalCompositeOperation={isEraser ? 'destination-out' : 'source-over'}
+        globalCompositeOperation={
+          isEraser ? 'destination-out' : isHighlighter ? 'multiply' : 'source-over'
+        }
         {...common}
       />
     );
@@ -210,7 +218,7 @@ export default function DrawingCanvas({ onExportReady }: DrawingCanvasProps) {
 
   const cursor =
     activeTool === 'eraser' ? (eraserMode === 'object' ? 'pointer' : 'cell')
-    : (activeTool === 'pen' || activeTool === 'pencil') ? 'crosshair'
+    : (activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'highlighter') ? 'crosshair'
     : 'copy';
 
   return (
