@@ -14,7 +14,6 @@ interface ToolbarProps {
 }
 
 const COLORS = ['#1a1a1a', '#7a7a7a', '#b0b0b0', '#2563eb', '#dc2626'];
-const WIDTHS = [2, 4, 7];
 const SHAPES: { kind: ShapeKind; Icon: typeof Square; label: string }[] = [
   { kind: 'rect', Icon: Square, label: 'Rectangle' },
   { kind: 'circle', Icon: Circle, label: 'Circle' },
@@ -194,21 +193,47 @@ export default function Toolbar({ onCheckWork }: ToolbarProps) {
             </button>
             {menu === 'color' && (
               <Popover pos={popPos}>
-                <div className="flex items-center gap-2">
-                  {COLORS.map((c) => (
-                    <button key={c} onClick={() => setStrokeColor(c)} aria-label={`Colour ${c}`} aria-pressed={strokeColor === c}
-                      className={cn('w-6 h-6 rounded-full transition-transform', strokeColor === c ? 'scale-110 ring-2 ring-offset-2 ring-[#1a1a1a]' : 'hover:scale-105')}
-                      style={{ background: c, boxShadow: '0 0 0 1.5px #9a9a9a' }} />
-                  ))}
-                </div>
-                <div className="h-[1px] bg-[#eaeaea] my-2.5" />
-                <div className="flex items-center gap-3 justify-center">
-                  {WIDTHS.map((w) => (
-                    <button key={w} onClick={() => setStrokeWidth(w)} aria-label={`Thickness ${w}`} aria-pressed={strokeWidth === w}
-                      className={cn('w-8 h-8 rounded-lg flex items-center justify-center transition-colors', strokeWidth === w ? 'bg-[#1a1a1a]' : 'bg-[#f4f4f4] hover:bg-[#eaeaea]')}>
-                      <span className="rounded-full" style={{ width: w + 2, height: w + 2, background: strokeWidth === w ? '#fff' : '#1a1a1a' }} />
-                    </button>
-                  ))}
+                <div className="w-[200px]">
+                  {/* Preset swatches + full colour-wheel picker */}
+                  <div className="text-[10px] tracking-widest uppercase text-[#9a9a9a] mb-2">Colour</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {COLORS.map((c) => (
+                      <button key={c} onClick={() => setStrokeColor(c)} aria-label={`Colour ${c}`} aria-pressed={strokeColor === c}
+                        className={cn('w-6 h-6 rounded-full transition-transform', strokeColor === c ? 'scale-110 ring-2 ring-offset-2 ring-[#1a1a1a]' : 'hover:scale-105')}
+                        style={{ background: c, boxShadow: '0 0 0 1.5px #9a9a9a' }} />
+                    ))}
+                    {/* Native colour wheel / picker */}
+                    <label
+                      className="relative w-6 h-6 rounded-full cursor-pointer overflow-hidden"
+                      title="Custom colour"
+                      style={{ boxShadow: '0 0 0 1.5px #9a9a9a', background: 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)' }}
+                    >
+                      <input
+                        type="color"
+                        value={strokeColor}
+                        onChange={(e) => setStrokeColor(e.target.value)}
+                        aria-label="Custom colour picker"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="h-[1px] bg-[#eaeaea] my-3" />
+
+                  {/* Size slider with live preview */}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] tracking-widest uppercase text-[#9a9a9a]">Size</span>
+                    <span className="text-[11px] font-semibold text-[#1a1a1a]">{strokeWidth}px</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="rounded-full bg-[#1a1a1a] flex-shrink-0" style={{ width: Math.min(strokeWidth, 20) + 2, height: Math.min(strokeWidth, 20) + 2 }} />
+                    <input
+                      type="range" min={1} max={30} value={strokeWidth}
+                      onChange={(e) => setStrokeWidth(Number(e.target.value))}
+                      aria-label="Stroke size"
+                      className="flex-1 accent-[#1a1a1a]"
+                    />
+                  </div>
                 </div>
               </Popover>
             )}

@@ -15,7 +15,7 @@
  */
 
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Stage, Layer, Line, Rect, Ellipse } from 'react-konva';
+import { Stage, Layer, Line, Rect, Ellipse, Group, Text } from 'react-konva';
 import type Konva from 'konva';
 import { useNumeraStore, type DrawnItem } from '@/store/useNumeraStore';
 import TutorLayer from './TutorLayer';
@@ -192,6 +192,29 @@ export default function DrawingCanvas({ onExportReady }: DrawingCanvasProps) {
       return <Ellipse key={item.id} x={item.x + item.w / 2} y={item.y + item.h / 2}
         radiusX={item.w / 2} radiusY={item.h / 2} stroke={item.color} strokeWidth={item.size}
         fill={onSelect ? 'rgba(0,0,0,0.001)' : undefined} {...common} />;
+    }
+    if (item.kind === 'line') {
+      // Ruler / scale — line + tick marks + a live length readout
+      const [x1, y1, x2, y2] = item.points;
+      const dx = x2 - x1, dy = y2 - y1;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len, uy = dy / len;   // along
+      const nx = -uy, ny = ux;               // normal
+      const ticks = [];
+      for (let d = 0; d <= len; d += 20) {
+        const tl = d % 100 === 0 ? 9 : 5;
+        const px = x1 + ux * d, py = y1 + uy * d;
+        ticks.push(<Line key={d} points={[px, py, px + nx * tl, py + ny * tl]} stroke={item.color} strokeWidth={1} />);
+      }
+      return (
+        <Group key={item.id} onClick={onSelect} onTap={onSelect}>
+          <Line points={[x1, y1, x2, y2]} stroke={item.color} strokeWidth={Math.max(item.size, 1.5)} lineCap="round" hitStrokeWidth={onSelect ? 16 : undefined} />
+          {ticks}
+          {len >= 8 && (
+            <Text x={(x1 + x2) / 2 + nx * 16 - 16} y={(y1 + y2) / 2 + ny * 16 - 6} text={`${Math.round(len)} px`} fontSize={11} fill={item.color} />
+          )}
+        </Group>
+      );
     }
     // stroke / line / triangle → Line
     const isPencil = item.kind === 'stroke' && item.tool === 'pencil';
