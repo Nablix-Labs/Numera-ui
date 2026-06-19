@@ -12,6 +12,8 @@ const nextConfig = {
         output: 'export',
         basePath: `/${repo}`,
         assetPrefix: `/${repo}/`,
+        // Emit dir/index.html so deep links work with or without a trailing slash
+        trailingSlash: true,
       }
     : {}),
   images: { unoptimized: true },
