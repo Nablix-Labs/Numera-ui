@@ -14,12 +14,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useNumeraStore } from '@/store/useNumeraStore';
-import { useCollab } from '@/hooks/useCollab';
 import BarModel from './BarModel';
 import Toolbar from './Toolbar';
-import PresenceBar from './PresenceBar';
-import CursorsLayer from './CursorsLayer';
-import InviteModal from './InviteModal';
+import TeachBack from './TeachBack';
 
 // react-konva requires client-only rendering (no SSR)
 const DrawingCanvas = dynamic(() => import('./DrawingCanvas'), { ssr: false });
@@ -38,11 +35,8 @@ export default function CanvasStage() {
 
   const exportRef = useRef<(() => string | null) | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useCollab(); // wires the (mock) collaboration provider while in group mode
 
   const handleExportReady = useCallback((fn: () => string | null) => {
     exportRef.current = fn;
@@ -103,12 +97,8 @@ export default function CanvasStage() {
         <DrawingCanvas onExportReady={handleExportReady} />
       </div>
 
-      {/* Live participants' cursors */}
-      <CursorsLayer />
-
-      {/* Presence + invite */}
-      <PresenceBar onInvite={() => setInviteOpen(true)} />
-      <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
+      {/* Teaching-back prompt */}
+      <TeachBack />
 
       {/* Check-work feedback toast */}
       {toast && (

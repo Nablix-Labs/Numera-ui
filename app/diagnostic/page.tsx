@@ -21,11 +21,22 @@ const QUESTIONS: Q[] = [
   { prompt: 'Expand: 3(x + 2)', options: ['3x + 2', '3x + 6', 'x + 6'], answer: 1 },
 ];
 
+const ORIENTATION: { q: string; options: string[] }[] = [
+  { q: 'How are you feeling about maths today?', options: ['Confident', 'Okay', 'A bit nervous'] },
+  { q: 'How do you like to learn best?', options: ['Step by step', 'See an example first', 'Just try it'] },
+];
+
 export default function DiagnosticPage() {
-  const [step, setStep] = useState<'intro' | 'quiz' | 'result'>('intro');
+  const [step, setStep] = useState<'intro' | 'orientation' | 'quiz' | 'result'>('intro');
+  const [oi, setOi] = useState(0);
   const [i, setI] = useState(0);
   const [score, setScore] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
+
+  const answerOrientation = () => {
+    if (oi + 1 < ORIENTATION.length) setOi(oi + 1);
+    else setStep('quiz');
+  };
 
   const answer = (idx: number) => {
     setPicked(idx);
@@ -54,9 +65,28 @@ export default function DiagnosticPage() {
             <p className="text-[13px] text-[#7a7a7a] mt-2 leading-relaxed">
               A one-time check so Numera knows your level and picks the right first topic. You only take this once — no pressure.
             </p>
-            <button onClick={() => setStep('quiz')} className="mt-5 w-full rounded-md bg-[#1a1a1a] text-white px-4 py-3 text-[13px] font-semibold hover:opacity-80 transition-opacity">
+            <button onClick={() => setStep('orientation')} className="mt-5 w-full rounded-md bg-[#1a1a1a] text-white px-4 py-3 text-[13px] font-semibold hover:opacity-80 transition-opacity">
               Begin
             </button>
+          </div>
+        )}
+
+        {step === 'orientation' && (
+          <div>
+            <div className="text-[10px] tracking-widest uppercase text-[#9a9a9a] mb-2">Getting to know you</div>
+            <h2 className="text-[20px] font-semibold text-[#1a1a1a] mb-5">{ORIENTATION[oi].q}</h2>
+            <div className="flex flex-col gap-2.5">
+              {ORIENTATION[oi].options.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={answerOrientation}
+                  className="rounded-lg border border-[#c8c8c8] hover:border-[#9a9a9a] px-4 py-3 text-left text-[14px] transition-colors"
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+            <p className="mt-4 text-[11.5px] text-[#9a9a9a]">No right answer — this just helps Numera coach you the way you like.</p>
           </div>
         )}
 

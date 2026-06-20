@@ -18,21 +18,27 @@ export type SessionState =
   | 'state_4'   // Student work
   | 'state_5';  // Review
 
-export type DrawingTool = 'pen' | 'eraser' | 'shape' | 'ruler';
+export type DrawingTool = 'pen' | 'pencil' | 'highlighter' | 'eraser' | 'shape' | 'ruler';
+export type ShapeKind = 'rect' | 'circle' | 'triangle';
+export type EraserMode = 'stroke' | 'object';
 
 export type InputMode = 'voice' | 'text' | 'canvas';
 
 /**
  * A single committed item on the drawing canvas.
- *  - stroke: freehand pen / eraser path (eraser uses destination-out)
- *  - line:   straight line drawn with the ruler tool
- *  - rect:   rectangle drawn with the shape tool
+ *  - stroke:   freehand pen / pencil / eraser path (eraser uses destination-out)
+ *  - line:     straight line drawn with the ruler tool
+ *  - rect:     rectangle (shape tool)
+ *  - ellipse:  circle / ellipse (shape tool)
+ *  - triangle: triangle (shape tool)
  * `size` is the stroke width in px.
  */
 export type DrawnItem =
-  | { id: string; kind: 'stroke'; tool: 'pen' | 'eraser'; points: number[]; color: string; size: number }
+  | { id: string; kind: 'stroke'; tool: 'pen' | 'pencil' | 'highlighter' | 'eraser'; points: number[]; color: string; size: number }
   | { id: string; kind: 'line'; points: number[]; color: string; size: number }
-  | { id: string; kind: 'rect'; x: number; y: number; w: number; h: number; color: string; size: number };
+  | { id: string; kind: 'rect'; x: number; y: number; w: number; h: number; color: string; size: number }
+  | { id: string; kind: 'ellipse'; x: number; y: number; w: number; h: number; color: string; size: number }
+  | { id: string; kind: 'triangle'; points: number[]; color: string; size: number };
 
 /**
  * Tutor-drawn element, rendered on a separate (non-erasable) canvas layer.
@@ -120,6 +126,8 @@ export interface NumeraState {
 
   // Canvas / drawing
   activeTool: DrawingTool;
+  shapeKind: ShapeKind;        // which shape the shape tool draws
+  eraserMode: EraserMode;      // freehand rub vs tap-to-delete an object
   strokeColor: string;
   strokeWidth: number;
   items: DrawnItem[];          // committed student items
@@ -135,6 +143,7 @@ export interface NumeraState {
   transcriptVisible: boolean;         // transcript can be hidden
   toolbarPos: { x: number; y: number } | null; // null = default docked position
   toolbarCollapsed: boolean;          // collapsed to a small bubble
+  toolbarOrientation: 'horizontal' | 'vertical'; // rotates when docked at a side
 
   // Runtime: canvas PNG exporter, registered by the canvas for PDF notes
   canvasExporter: (() => string | null) | null;
@@ -172,9 +181,12 @@ export interface NumeraState {
   addTranscriptMessage: (msg: Omit<TranscriptMessage, 'id' | 'timestamp'>) => void;
   updatePartialTranscript: (text: string) => void;
   setActiveTool: (t: DrawingTool) => void;
+  setShapeKind: (k: ShapeKind) => void;
+  setEraserMode: (m: EraserMode) => void;
   setStrokeColor: (c: string) => void;
   setStrokeWidth: (w: number) => void;
   addItem: (item: DrawnItem) => void;
+  removeItem: (id: string) => void;
   undo: () => void;
   redo: () => void;
   clearCanvas: () => void;
@@ -187,6 +199,7 @@ export interface NumeraState {
   toggleTranscript: () => void;
   setToolbarPos: (pos: { x: number; y: number } | null) => void;
   toggleToolbarCollapsed: () => void;
+  setToolbarOrientation: (o: 'horizontal' | 'vertical') => void;
   setCanvasExporter: (fn: (() => string | null) | null) => void;
   startGroupSession: () => void;
   endGroupSession: () => void;
@@ -214,10 +227,11 @@ const initial: Omit<
   | 'setSessionId' | 'setSessionState' | 'setActiveSlide' | 'setTotalSlides'
   | 'setQuestionText' | 'setQuestionNumber' | 'toggleMic' | 'setVoiceStatus'
   | 'addTranscriptMessage' | 'updatePartialTranscript' | 'setActiveTool'
-  | 'setStrokeColor' | 'setStrokeWidth' | 'addItem' | 'undo' | 'redo'
+  | 'setShapeKind' | 'setEraserMode'
+  | 'setStrokeColor' | 'setStrokeWidth' | 'addItem' | 'removeItem' | 'undo' | 'redo'
   | 'clearCanvas' | 'applyCanvasDraw' | 'clearTutorMarks'
   | 'setInputMode' | 'setTextInput' | 'setPanelSide' | 'togglePanelSide'
-  | 'toggleTranscript' | 'setToolbarPos' | 'toggleToolbarCollapsed'
+  | 'toggleTranscript' | 'setToolbarPos' | 'toggleToolbarCollapsed' | 'setToolbarOrientation'
   | 'setCanvasExporter' | 'startGroupSession' | 'endGroupSession'
   | 'upsertParticipant' | 'removeParticipant' | 'setParticipantCursor'
   | 'addRemoteItem' | 'toggleLessonLearned' | 'setPracticeDone' | 'setStudentAge'
@@ -254,6 +268,8 @@ const initial: Omit<
     },
   ],
   activeTool: 'pen',
+  shapeKind: 'rect',
+  eraserMode: 'stroke',
   strokeColor: '#1a1a1a',
   strokeWidth: 3,
   items: [],
@@ -265,6 +281,7 @@ const initial: Omit<
   transcriptVisible: true,
   toolbarPos: null,
   toolbarCollapsed: false,
+  toolbarOrientation: 'horizontal',
   canvasExporter: null,
   sessionMode: 'solo',
   participants: [],
@@ -337,11 +354,16 @@ export const useNumeraStore = create<NumeraState>()(
     }),
 
   setActiveTool: (activeTool) => set({ activeTool }),
+  setShapeKind: (shapeKind) => set({ shapeKind, activeTool: 'shape' }),
+  setEraserMode: (eraserMode) => set({ eraserMode, activeTool: 'eraser' }),
   setStrokeColor: (strokeColor) => set({ strokeColor }),
   setStrokeWidth: (strokeWidth) => set({ strokeWidth }),
 
   addItem: (item) =>
     set((s) => ({ items: [...s.items, item], undone: [] })),
+
+  removeItem: (id) =>
+    set((s) => ({ items: s.items.filter((it) => it.id !== id) })),
 
   undo: () =>
     set((s) => {
@@ -381,6 +403,7 @@ export const useNumeraStore = create<NumeraState>()(
   toggleTranscript: () => set((s) => ({ transcriptVisible: !s.transcriptVisible })),
   setToolbarPos: (toolbarPos) => set({ toolbarPos }),
   toggleToolbarCollapsed: () => set((s) => ({ toolbarCollapsed: !s.toolbarCollapsed })),
+  setToolbarOrientation: (toolbarOrientation) => set({ toolbarOrientation }),
   setCanvasExporter: (canvasExporter) => set({ canvasExporter }),
 
   startGroupSession: () => set({ sessionMode: 'group' }),
@@ -457,6 +480,9 @@ export const useNumeraStore = create<NumeraState>()(
         transcriptVisible: s.transcriptVisible,
         toolbarPos: s.toolbarPos,
         toolbarCollapsed: s.toolbarCollapsed,
+        toolbarOrientation: s.toolbarOrientation,
+        shapeKind: s.shapeKind,
+        eraserMode: s.eraserMode,
         completedLessons: s.completedLessons,
         practiceCompleted: s.practiceCompleted,
         studentAge: s.studentAge,

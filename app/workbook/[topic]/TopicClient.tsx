@@ -1,15 +1,11 @@
-import { CURRICULUM } from '@/lib/curriculum';
-import TopicClient from './TopicClient';
+'use client';
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Check } from 'lucide-react';
 import PageShell, { Chip } from '@/components/PageShell';
 import { useNumeraStore } from '@/store/useNumeraStore';
-import {
-  getTopic, effectiveStatus, subtopicsForStage, keyStageForAge,
-  type LessonStatus,
-} from '@/lib/curriculum';
+import { getTopic, effectiveStatus, type LessonStatus } from '@/lib/curriculum';
 
 const ACTION: Record<LessonStatus, string> = {
   mastered: 'Learn again',
@@ -17,24 +13,12 @@ const ACTION: Record<LessonStatus, string> = {
   'not-started': 'Start',
 };
 
-export default function TopicPage({ params }: { params: { topic: string } }) {
-  const topic = getTopic(params.topic);
+export default function TopicClient({ topicId }: { topicId: string }) {
+  const topic = getTopic(topicId);
   const completed = useNumeraStore((s) => s.completedLessons);
-  const age = useNumeraStore((s) => s.studentAge);
   const toggleLessonLearned = useNumeraStore((s) => s.toggleLessonLearned);
 
   if (!topic) notFound();
-
-  // Only show subtopics for the student's Key Stage (age-gated).
-  const ks = keyStageForAge(age);
-  const subtopics = subtopicsForStage(topic, ks);
-
-  // A new lesson starts via the topic-entry (small) diagnostic; resuming or
-  // re-learning goes straight to the guided lesson.
-  const linkFor = (status: LessonStatus, lessonId: string) =>
-    status === 'not-started'
-      ? `/diagnostic/${topic.id}?lesson=${lessonId}`
-      : '/';
 
   return (
     <PageShell
@@ -50,7 +34,7 @@ export default function TopicPage({ params }: { params: { topic: string } }) {
       }
     >
       <div className="flex flex-col gap-7 max-w-3xl">
-        {subtopics.map((sub) => (
+        {topic.subtopics.map((sub) => (
           <section key={sub.id}>
             <div className="flex items-center gap-2 mb-2.5">
               <span className="text-[11px] font-semibold tracking-widest uppercase text-[#9a9a9a]">
@@ -86,7 +70,7 @@ export default function TopicPage({ params }: { params: { topic: string } }) {
                     </div>
                     {status === 'in-progress' && <Chip>In progress</Chip>}
                     <Link
-                      href={linkFor(status, l.id)}
+                      href="/"
                       className="flex-shrink-0 inline-flex items-center justify-center rounded-md border border-[#1a1a1a] text-[#1a1a1a] text-[12px] font-semibold px-3.5 py-1.5 hover:bg-[#1a1a1a] hover:text-white transition-colors"
                     >
                       {ACTION[status]}
