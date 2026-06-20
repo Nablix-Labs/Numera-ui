@@ -148,6 +148,9 @@ export interface NumeraState {
   completedLessons: string[];
   practiceCompleted: boolean; // has the student finished an independent practice
 
+  // Student profile (persisted) — age drives the Key Stage they're shown
+  studentAge: number;
+
   // Group Challenge Mode
   challengeActive: boolean;
   challengeProblem: string;
@@ -193,6 +196,7 @@ export interface NumeraState {
   addRemoteItem: (item: DrawnItem) => void;
   toggleLessonLearned: (lessonId: string) => void;
   setPracticeDone: () => void;
+  setStudentAge: (age: number) => void;
   startChallenge: (problem: string) => void;
   endChallenge: () => void;
   setReviewStatus: (s: ReviewStatus) => void;
@@ -216,7 +220,7 @@ const initial: Omit<
   | 'toggleTranscript' | 'setToolbarPos' | 'toggleToolbarCollapsed'
   | 'setCanvasExporter' | 'startGroupSession' | 'endGroupSession'
   | 'upsertParticipant' | 'removeParticipant' | 'setParticipantCursor'
-  | 'addRemoteItem' | 'toggleLessonLearned' | 'setPracticeDone'
+  | 'addRemoteItem' | 'toggleLessonLearned' | 'setPracticeDone' | 'setStudentAge'
   | 'startChallenge' | 'endChallenge'
   | 'setReviewStatus' | 'addCommentary' | 'setSpotlight' | 'addBoardItem'
   | 'setPrivateFeedback' | 'reset'
@@ -267,6 +271,7 @@ const initial: Omit<
   remoteItems: [],
   completedLessons: [],
   practiceCompleted: false,
+  studentAge: 14,
   challengeActive: false,
   challengeProblem: '3x + 5 = 20',
   reviewStatus: 'idle',
@@ -404,6 +409,7 @@ export const useNumeraStore = create<NumeraState>()(
         : [...s.completedLessons, lessonId],
     })),
   setPracticeDone: () => set({ practiceCompleted: true }),
+  setStudentAge: (studentAge) => set({ studentAge }),
 
   startChallenge: (challengeProblem) =>
     set({
@@ -453,6 +459,7 @@ export const useNumeraStore = create<NumeraState>()(
         toolbarCollapsed: s.toolbarCollapsed,
         completedLessons: s.completedLessons,
         practiceCompleted: s.practiceCompleted,
+        studentAge: s.studentAge,
       }),
       // Hydrate manually after mount to avoid SSR/client mismatch (see AppShell).
       skipHydration: true,

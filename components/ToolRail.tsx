@@ -13,7 +13,7 @@ const TOP_ITEMS = [
   { icon: BookOpen, label: 'Workbook',       href: '/workbook' },
   { icon: Target,   label: 'Practice',       href: '/practice' },
   { icon: Swords,   label: 'Group Challenge',href: '/challenge' },
-  { icon: Zap,      label: 'Revise',         href: '/revise' },
+  { icon: Zap,      label: 'Key Notes',      href: '/keynotes' },
   { icon: Users,    label: 'People',         href: '/people' },
   { icon: Folder,   label: 'Files',          href: '/files' },
   { icon: Flag,     label: 'Flagged',        href: '/flagged' },

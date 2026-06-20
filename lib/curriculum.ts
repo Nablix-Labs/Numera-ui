@@ -180,3 +180,27 @@ export function topicProgressWith(t: Topic, completed: string[]): number {
 export function topicKeyStages(t: Topic): KeyStage[] {
   return Array.from(new Set(t.subtopics.map((s) => s.keyStage)));
 }
+
+/**
+ * Age → Key Stage. A student only ever sees content for their own stage, so
+ * placement and the workbook are driven by age, not free browsing.
+ * KS3 = 11–13 · KS4 = 14–16 (GCSE) · KS5 = 17–18 (A-Level).
+ */
+export function keyStageForAge(age: number): KeyStage {
+  if (age <= 13) return 'KS3';
+  if (age <= 16) return 'KS4';
+  return 'KS5';
+}
+
+/** A topic's subtopics limited to one Key Stage (age-gated view). */
+export function subtopicsForStage(t: Topic, ks: KeyStage): Subtopic[] {
+  return t.subtopics.filter((s) => s.keyStage === ks);
+}
+
+/** Topic progress %, counting only the lessons visible at a Key Stage. */
+export function topicProgressForStage(t: Topic, ks: KeyStage, completed: string[]): number {
+  const all = subtopicsForStage(t, ks).flatMap((s) => s.lessons);
+  if (all.length === 0) return 0;
+  const done = all.filter((l) => effectiveStatus(l, completed) === 'mastered').length;
+  return Math.round((done / all.length) * 100);
+}
