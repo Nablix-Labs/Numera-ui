@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * Diagnostic / preliminary assessment — a short adaptive check to gauge the
- * student's level and recommend where to start. (Scoring/placement is backend
- * in production; mocked here as a simple wizard that maps answers to a start
- * point.)
+ * Diagnostic — the BIG, one-time placement assessment. Taken once when a
+ * student joins; it decides which topic they start on. (The smaller per-topic
+ * readiness check lives at /diagnostic/[topic] and runs before each new topic.)
+ * Scoring/placement is backend in production; mocked here as a simple wizard.
  */
 
 import { useState } from 'react';
@@ -63,7 +63,7 @@ export default function DiagnosticPage() {
             </div>
             <h1 className="text-[22px] font-semibold text-[#1a1a1a]">Quick diagnostic</h1>
             <p className="text-[13px] text-[#7a7a7a] mt-2 leading-relaxed">
-              A few short questions so Numera knows your level and starts you in the right place. No pressure — it just helps us help you.
+              A one-time check so Numera knows your level and picks the right first topic. You only take this once — no pressure.
             </p>
             <button onClick={() => setStep('orientation')} className="mt-5 w-full rounded-md bg-[#1a1a1a] text-white px-4 py-3 text-[13px] font-semibold hover:opacity-80 transition-opacity">
               Begin
@@ -129,8 +129,8 @@ export default function DiagnosticPage() {
               <div className="text-[10px] tracking-widest uppercase text-[#9a9a9a] mb-1">We&apos;ll start you at</div>
               <div className="text-[16px] font-semibold text-[#1a1a1a]">{placement.topic} <span className="text-[#7a7a7a] font-normal">· {placement.ks}</span></div>
             </div>
-            <Link href="/" className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#1a1a1a] text-white px-4 py-3 text-[13px] font-semibold hover:opacity-80 transition-opacity">
-              Begin guided learning <ArrowRight size={16} strokeWidth={2} />
+            <Link href="/orientation/algebra" className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#1a1a1a] text-white px-4 py-3 text-[13px] font-semibold hover:opacity-80 transition-opacity">
+              Begin orientation <ArrowRight size={16} strokeWidth={2} />
             </Link>
           </div>
         )}
