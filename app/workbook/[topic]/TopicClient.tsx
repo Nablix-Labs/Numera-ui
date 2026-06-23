@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ChevronLeft, Check } from 'lucide-react';
-import PageShell, { Chip } from '@/components/PageShell';
+import { ChevronLeft, Check, BookOpen } from 'lucide-react';
+import PageShell, { Chip, EmptyState } from '@/components/PageShell';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import {
   getTopic, effectiveStatus, subtopicsForStage, keyStageForAge,
@@ -49,6 +49,18 @@ export default function TopicClient({ topicId }: { topicId: string }) {
       }
     >
       <div className="flex flex-col gap-7 max-w-3xl">
+        {subtopics.length === 0 && (
+          <EmptyState
+            icon={<BookOpen size={20} strokeWidth={1.6} />}
+            title="Nothing at your level here yet"
+            body={`${topic.title} has no subtopics for your school year right now. Pick another topic from your workbook.`}
+            action={
+              <Link href="/workbook" className="inline-flex items-center gap-1.5 rounded-md bg-[#1a1a1a] text-white px-4 py-2.5 text-[12.5px] font-semibold hover:opacity-80 transition-opacity">
+                <ChevronLeft size={15} strokeWidth={1.8} /> Back to workbook
+              </Link>
+            }
+          />
+        )}
         {subtopics.map((sub) => (
           <section key={sub.id}>
             <div className="flex items-center gap-2 mb-2.5">

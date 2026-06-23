@@ -1,4 +1,5 @@
 import { CURRICULUM } from '@/lib/curriculum';
+import PhaseGate from '@/components/PhaseGate';
 import TopicClient from './TopicClient';
 
 // Static export — pre-render a page for every topic in the curriculum.
@@ -7,5 +8,9 @@ export function generateStaticParams() {
 }
 
 export default function Page({ params }: { params: { topic: string } }) {
-  return <TopicClient topicId={params.topic} />;
+  return (
+    <PhaseGate phase="workbook">
+      <TopicClient topicId={params.topic} />
+    </PhaseGate>
+  );
 }

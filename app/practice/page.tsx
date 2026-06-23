@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Eye, EyeOff, Lightbulb, Check, ArrowRight } from 'lucide-react';
 import { useNumeraStore } from '@/store/useNumeraStore';
+import PhaseGate from '@/components/PhaseGate';
 import Toolbar from '@/components/Canvas/Toolbar';
 import { cn } from '@/lib/cn';
 
@@ -31,6 +32,7 @@ export default function PracticePage() {
   const setCanvasExporter = useNumeraStore((s) => s.setCanvasExporter);
   const practiceCompleted = useNumeraStore((s) => s.practiceCompleted);
   const setPracticeDone = useNumeraStore((s) => s.setPracticeDone);
+  const completePhase = useNumeraStore((s) => s.completePhase);
 
   const [mode, setMode] = useState<AIMode>('observing');
   const [hintIndex, setHintIndex] = useState(0);
@@ -54,9 +56,10 @@ export default function PracticePage() {
     setHintIndex((i) => Math.min(i + 1, HINTS.length - 1));
   };
 
-  const finish = () => { setDone(true); setPracticeDone(); };
+  const finish = () => { setDone(true); setPracticeDone(); completePhase('practice'); };
 
   return (
+    <PhaseGate phase="practice">
     <div className="flex-1 min-w-0 flex flex-col bg-white" aria-label="Independent practice">
       {/* Header */}
       <header className="flex items-center gap-4 px-6 py-3.5 border-b border-[#c8c8c8] flex-shrink-0">
@@ -157,5 +160,6 @@ export default function PracticePage() {
         </div>
       )}
     </div>
+    </PhaseGate>
   );
 }

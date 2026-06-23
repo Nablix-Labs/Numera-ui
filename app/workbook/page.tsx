@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { Folder, ClipboardCheck } from 'lucide-react';
-import PageShell, { ProgressBar, Chip } from '@/components/PageShell';
+import PageShell, { ProgressBar, Chip, EmptyState } from '@/components/PageShell';
+import PhaseGate from '@/components/PhaseGate';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import {
   CURRICULUM, KEY_STAGES, subtopicsForStage, topicProgressForStage,
@@ -24,6 +25,7 @@ export default function WorkbookPage() {
     .filter((x) => x.subs.length > 0);
 
   return (
+    <PhaseGate phase="workbook">
     <PageShell
       title="Workbook"
       subtitle="Your topics and subtopics — matched to your school year."
@@ -56,6 +58,18 @@ export default function WorkbookPage() {
         </div>
       </div>
 
+      {topics.length === 0 ? (
+        <EmptyState
+          icon={<Folder size={20} strokeWidth={1.6} />}
+          title={`No topics for ${stage.label} yet`}
+          body="We haven't added content for your school year here yet. Try another age, or retake the diagnostic to re-check your level."
+          action={
+            <Link href="/diagnostic" className="inline-flex items-center gap-1.5 rounded-md bg-[#1a1a1a] text-white px-4 py-2.5 text-[12.5px] font-semibold hover:opacity-80 transition-opacity">
+              <ClipboardCheck size={15} strokeWidth={1.8} /> Retake diagnostic
+            </Link>
+          }
+        />
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {topics.map(({ topic: t, subs }) => {
           const lessons = subs.flatMap((s) => s.lessons);
@@ -91,6 +105,8 @@ export default function WorkbookPage() {
           );
         })}
       </div>
+      )}
     </PageShell>
+    </PhaseGate>
   );
 }

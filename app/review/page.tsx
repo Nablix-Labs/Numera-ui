@@ -12,12 +12,14 @@
  * A final spoken summary closes the session.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Check, X, ChevronLeft, ChevronRight, Volume2, Square, Eye, EyeOff, BookOpen,
 } from 'lucide-react';
 import PageShell, { Chip } from '@/components/PageShell';
+import PhaseGate from '@/components/PhaseGate';
+import { useNumeraStore } from '@/store/useNumeraStore';
 import { cn } from '@/lib/cn';
 
 /** A line of the student's working, with any tutor mark attached. */
@@ -121,10 +123,17 @@ export default function ReviewPage() {
   const [showMarks, setShowMarks] = useState(false);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
 
+  const completePhase = useNumeraStore((s) => s.completePhase);
+
   const total = WORKSHEETS.length;
   const done = i >= total;                 // past the last sheet → final summary
   const ws = WORKSHEETS[Math.min(i, total - 1)];
   const score = WORKSHEETS.filter((w) => w.correct).length;
+
+  // Reaching the final summary clears the review phase.
+  useEffect(() => {
+    if (done) completePhase('review');
+  }, [done, completePhase]);
 
   const stop = useCallback(() => { stopSpeaking(); setSpeakingId(null); }, []);
 
@@ -138,6 +147,7 @@ export default function ReviewPage() {
   const goto = (next: number) => { stop(); setShowMarks(false); setI(next); };
 
   return (
+    <PhaseGate phase="review">
     <PageShell
       title="Review & feedback"
       subtitle="Linear equations · today"
@@ -312,5 +322,6 @@ export default function ReviewPage() {
         )}
       </div>
     </PageShell>
+    </PhaseGate>
   );
 }

@@ -7,9 +7,10 @@
  * Scoring/placement is backend in production; mocked here as a simple wizard.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ClipboardCheck, ArrowRight, Check } from 'lucide-react';
+import { useNumeraStore } from '@/store/useNumeraStore';
 import { cn } from '@/lib/cn';
 
 interface Q { prompt: string; options: string[]; answer: number }
@@ -32,6 +33,12 @@ export default function DiagnosticPage() {
   const [i, setI] = useState(0);
   const [score, setScore] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
+  const completePhase = useNumeraStore((s) => s.completePhase);
+
+  // Reaching the result clears the diagnostic phase → unlocks orientation.
+  useEffect(() => {
+    if (step === 'result') completePhase('diagnostic');
+  }, [step, completePhase]);
 
   const answerOrientation = () => {
     if (oi + 1 < ORIENTATION.length) setOi(oi + 1);
