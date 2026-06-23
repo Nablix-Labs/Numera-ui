@@ -7,6 +7,7 @@
  */
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import type { LearningPhase } from '@/lib/phases';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -157,6 +158,9 @@ export interface NumeraState {
   completedLessons: string[];
   practiceCompleted: boolean; // has the student finished an independent practice
 
+  // Learning-flow funnel (persisted) — which gated phases the student has cleared
+  phasesDone: LearningPhase[];
+
   // Student profile (persisted) — age drives the Key Stage they're shown
   studentAge: number;
 
@@ -210,6 +214,7 @@ export interface NumeraState {
   toggleLessonLearned: (lessonId: string) => void;
   setPracticeDone: () => void;
   setStudentAge: (age: number) => void;
+  completePhase: (phase: LearningPhase) => void;
   startChallenge: (problem: string) => void;
   endChallenge: () => void;
   setReviewStatus: (s: ReviewStatus) => void;
@@ -235,6 +240,7 @@ const initial: Omit<
   | 'setCanvasExporter' | 'startGroupSession' | 'endGroupSession'
   | 'upsertParticipant' | 'removeParticipant' | 'setParticipantCursor'
   | 'addRemoteItem' | 'toggleLessonLearned' | 'setPracticeDone' | 'setStudentAge'
+  | 'completePhase'
   | 'startChallenge' | 'endChallenge'
   | 'setReviewStatus' | 'addCommentary' | 'setSpotlight' | 'addBoardItem'
   | 'setPrivateFeedback' | 'reset'
@@ -288,6 +294,7 @@ const initial: Omit<
   remoteItems: [],
   completedLessons: [],
   practiceCompleted: false,
+  phasesDone: [],
   studentAge: 14,
   challengeActive: false,
   challengeProblem: '3x + 5 = 20',
@@ -434,6 +441,13 @@ export const useNumeraStore = create<NumeraState>()(
   setPracticeDone: () => set({ practiceCompleted: true }),
   setStudentAge: (studentAge) => set({ studentAge }),
 
+  completePhase: (phase) =>
+    set((s) =>
+      s.phasesDone.includes(phase)
+        ? s
+        : { phasesDone: [...s.phasesDone, phase] }
+    ),
+
   startChallenge: (challengeProblem) =>
     set({
       challengeActive: true,
@@ -485,6 +499,7 @@ export const useNumeraStore = create<NumeraState>()(
         eraserMode: s.eraserMode,
         completedLessons: s.completedLessons,
         practiceCompleted: s.practiceCompleted,
+        phasesDone: s.phasesDone,
         studentAge: s.studentAge,
       }),
       // Hydrate manually after mount to avoid SSR/client mismatch (see AppShell).
