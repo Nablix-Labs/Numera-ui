@@ -64,6 +64,37 @@ export function ProgressBar({ value }: { value: number }) {
   );
 }
 
+/** Shimmering grey placeholder block for loading states. */
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cn('animate-pulse rounded-md bg-[#eaeaea]', className)} />;
+}
+
+/** Centered empty/placeholder panel for "nothing here yet" states. */
+export function EmptyState({
+  icon,
+  title,
+  body,
+  action,
+}: {
+  icon?: ReactNode;
+  title: string;
+  body?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center text-center rounded-lg border border-dashed border-[#c8c8c8] bg-[#f9f9f9] px-8 py-14">
+      {icon && (
+        <span className="w-11 h-11 rounded-xl border border-[#c8c8c8] bg-white text-[#9a9a9a] flex items-center justify-center mb-3">
+          {icon}
+        </span>
+      )}
+      <h3 className="text-[15px] font-semibold text-[#1a1a1a]">{title}</h3>
+      {body && <p className="text-[12.5px] text-[#7a7a7a] mt-1.5 max-w-sm leading-relaxed">{body}</p>}
+      {action && <div className="mt-5">{action}</div>}
+    </div>
+  );
+}
+
 /** Square icon tile used in list rows. */
 export function IconBadge({ children }: { children: ReactNode }) {
   return (
