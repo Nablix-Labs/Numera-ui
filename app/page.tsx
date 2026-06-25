@@ -8,13 +8,37 @@
  * navigation strip and the drawing canvas.
  */
 
+import { useEffect, useState } from 'react';
 import SlideDots from '@/components/SlideDots';
 import CanvasStage from '@/components/Canvas';
 import ContinuityCheck from '@/components/ContinuityCheck';
 import { useFlowNav } from '@/lib/useFlowNav';
+import { useNumeraStore } from '@/store/useNumeraStore';
+import { demoFor } from '@/lib/demoContent';
 
 export default function LessonPage() {
   const { goStage, currentTopicId } = useFlowNav();
+  const setQuestionText = useNumeraStore((s) => s.setQuestionText);
+  const setQuestionNumber = useNumeraStore((s) => s.setQuestionNumber);
+  const setTranscript = useNumeraStore((s) => s.setTranscript);
+
+  // Wait for the persisted store to rehydrate before writing lesson content —
+  // writing earlier would persist default state over the saved placement.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    if (useNumeraStore.persist.hasHydrated()) setHydrated(true);
+    return useNumeraStore.persist.onFinishHydration(() => setHydrated(true));
+  }, []);
+
+  // Load the placed topic's lesson content into the live session.
+  useEffect(() => {
+    if (!hydrated) return;
+    const demo = demoFor(currentTopicId);
+    setQuestionText(demo.lessonQuestion);
+    setQuestionNumber(demo.questionNumber);
+    setTranscript(demo.transcript);
+  }, [hydrated, currentTopicId, setQuestionText, setQuestionNumber, setTranscript]);
+
   return (
     <>
       <SlideDots />

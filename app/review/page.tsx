@@ -20,86 +20,8 @@ import PageShell, { Chip } from '@/components/PageShell';
 import PhaseGate from '@/components/PhaseGate';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import { useFlowNav } from '@/lib/useFlowNav';
+import { demoFor } from '@/lib/demoContent';
 import { cn } from '@/lib/cn';
-
-/** A line of the student's working, with any tutor mark attached. */
-interface Line {
-  text: string;
-  mark?: 'tick' | 'cross';
-  circle?: boolean;     // tutor circled this line (the slip)
-  label?: string;       // small note beside the circle, e.g. "sign error"
-}
-
-interface Worksheet {
-  question: string;
-  correct: boolean;
-  student: Line[];
-  corrections?: string[]; // corrected steps the tutor writes in red
-  voice: string;          // what the tutor says aloud
-}
-
-const WORKSHEETS: Worksheet[] = [
-  {
-    question: '2x + 5 = 13',
-    correct: true,
-    student: [
-      { text: '2x + 5 = 13', mark: 'tick' },
-      { text: '2x = 13 − 5', mark: 'tick' },
-      { text: '2x = 8', mark: 'tick' },
-      { text: 'x = 4', mark: 'tick' },
-    ],
-    voice: 'Clean working here. You subtracted five from both sides, then divided by two. The answer x equals four is correct.',
-  },
-  {
-    question: '3(x − 2) = 9',
-    correct: false,
-    student: [
-      { text: '3(x − 2) = 9', mark: 'tick' },
-      { text: '3x − 2 = 9', mark: 'cross', circle: true, label: 'expand error' },
-      { text: '3x = 11', mark: 'cross' },
-      { text: 'x = 11/3', mark: 'cross' },
-    ],
-    corrections: ['3x − 6 = 9', '3x = 15', 'x = 5'],
-    voice: 'Your method is right, but look at this step. When you expand three times the bracket, the minus two becomes minus six, not minus two. So it should be three x minus six. That gives x equals five.',
-  },
-  {
-    question: '4x − 3 = 17',
-    correct: true,
-    student: [
-      { text: '4x − 3 = 17', mark: 'tick' },
-      { text: '4x = 17 + 3', mark: 'tick' },
-      { text: '4x = 20', mark: 'tick' },
-      { text: 'x = 5', mark: 'tick' },
-    ],
-    voice: 'Good work. You added three to both sides first, then divided by four. x equals five is correct.',
-  },
-  {
-    question: '5(x + 1) = 20',
-    correct: false,
-    student: [
-      { text: '5(x + 1) = 20', mark: 'tick' },
-      { text: '5x + 1 = 20', mark: 'cross', circle: true, label: 'expand' },
-      { text: '5x = 19', mark: 'cross' },
-      { text: 'x = 19/5', mark: 'cross' },
-    ],
-    corrections: ['5x + 5 = 20', '5x = 15', 'x = 3'],
-    voice: 'Here you forgot to expand the bracket. Five times x plus one is five x plus five, not five x plus one. Once you fix that, x equals three.',
-  },
-  {
-    question: '2x − 7 = 9',
-    correct: true,
-    student: [
-      { text: '2x − 7 = 9', mark: 'tick' },
-      { text: '2x = 9 + 7', mark: 'tick' },
-      { text: '2x = 16', mark: 'tick' },
-      { text: 'x = 8', mark: 'tick' },
-    ],
-    voice: 'Solved confidently. You moved the seven across correctly and divided by two. x equals eight is right.',
-  },
-];
-
-const SUMMARY =
-  'You completed five questions. Three were correct and two need improvement. You understand the method well — just be more careful when expanding brackets before solving.';
 
 /** Tutor's red pen — the only colour outside the grayscale system, by design. */
 const INK = '#b42318';
@@ -124,7 +46,13 @@ export default function ReviewPage() {
   const [speakingId, setSpeakingId] = useState<string | null>(null);
 
   const completePhase = useNumeraStore((s) => s.completePhase);
+  const currentTopicId = useNumeraStore((s) => s.currentTopicId);
   const { decideReview } = useFlowNav();
+
+  // Worksheets + summary for the placed topic.
+  const demo = demoFor(currentTopicId);
+  const WORKSHEETS = demo.worksheets;
+  const SUMMARY = demo.reviewSummary;
 
   const total = WORKSHEETS.length;
   const done = i >= total;                 // past the last sheet → final summary
@@ -151,7 +79,7 @@ export default function ReviewPage() {
     <PhaseGate phase="review">
     <PageShell
       title="Review & feedback"
-      subtitle="Linear equations · today"
+      subtitle={`${demo.label} · today`}
       action={<Chip tone="solid">{score} / {total}</Chip>}
     >
       <div className="flex flex-col gap-6 max-w-3xl">

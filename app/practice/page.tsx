@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic';
 import { Eye, EyeOff, Lightbulb, Check, ArrowRight } from 'lucide-react';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import { useFlowNav } from '@/lib/useFlowNav';
+import { demoFor } from '@/lib/demoContent';
 import PhaseGate from '@/components/PhaseGate';
 import Toolbar from '@/components/Canvas/Toolbar';
 import { cn } from '@/lib/cn';
@@ -20,20 +21,19 @@ const DrawingCanvas = dynamic(() => import('@/components/Canvas/DrawingCanvas'),
 
 type AIMode = 'observing' | 'hint' | 'quiet';
 
-const QUESTION = '4x − 3 = 17';
-const HINTS = [
-  'Start by getting the x term on its own — what undoes the − 3?',
-  'Add 3 to both sides first. What does the left side become?',
-  'Now you have 4x = 20. How do you get x by itself?',
-];
-
 export default function PracticePage() {
   const items = useNumeraStore((s) => s.items);
   const setCanvasExporter = useNumeraStore((s) => s.setCanvasExporter);
   const practiceCompleted = useNumeraStore((s) => s.practiceCompleted);
   const setPracticeDone = useNumeraStore((s) => s.setPracticeDone);
   const completePhase = useNumeraStore((s) => s.completePhase);
+  const currentTopicId = useNumeraStore((s) => s.currentTopicId);
   const { goStage } = useFlowNav();
+
+  // Practice problem + hints for the placed topic.
+  const demo = demoFor(currentTopicId);
+  const QUESTION = demo.practiceQuestion;
+  const HINTS = demo.practiceHints;
 
   const [mode, setMode] = useState<AIMode>('observing');
   const [hintIndex, setHintIndex] = useState(0);

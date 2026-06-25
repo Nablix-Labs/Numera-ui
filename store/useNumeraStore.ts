@@ -191,6 +191,7 @@ export interface NumeraState {
   toggleMic: () => void;
   setVoiceStatus: (s: NumeraState['voiceStatus']) => void;
   addTranscriptMessage: (msg: Omit<TranscriptMessage, 'id' | 'timestamp'>) => void;
+  setTranscript: (msgs: Pick<TranscriptMessage, 'role' | 'text'>[]) => void;
   updatePartialTranscript: (text: string) => void;
   setActiveTool: (t: DrawingTool) => void;
   setShapeKind: (k: ShapeKind) => void;
@@ -243,7 +244,7 @@ const initial: Omit<
   NumeraState,
   | 'setSessionId' | 'setSessionState' | 'setActiveSlide' | 'setTotalSlides'
   | 'setQuestionText' | 'setQuestionNumber' | 'toggleMic' | 'setVoiceStatus'
-  | 'addTranscriptMessage' | 'updatePartialTranscript' | 'setActiveTool'
+  | 'addTranscriptMessage' | 'setTranscript' | 'updatePartialTranscript' | 'setActiveTool'
   | 'setShapeKind' | 'setEraserMode'
   | 'setStrokeColor' | 'setStrokeWidth' | 'addItem' | 'removeItem' | 'undo' | 'redo'
   | 'clearCanvas' | 'applyCanvasDraw' | 'clearTutorMarks'
@@ -351,6 +352,16 @@ export const useNumeraStore = create<NumeraState>()(
         { ...msg, id: crypto.randomUUID(), timestamp: Date.now() },
       ],
     })),
+
+  setTranscript: (msgs) =>
+    set({
+      transcript: msgs.map((m, idx) => ({
+        id: `seed-${idx}`,
+        role: m.role,
+        text: m.text,
+        timestamp: Date.now() - (msgs.length - idx) * 10_000,
+      })),
+    }),
 
   updatePartialTranscript: (text) =>
     set((s) => {
