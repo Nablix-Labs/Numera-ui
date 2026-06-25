@@ -30,7 +30,21 @@ const STAGE_LABEL: Record<FlowStage, string> = {
 export default function FlowControls() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(true);
   useEffect(() => setMounted(true), []);
+
+  // Toggle the bar with Shift+D (ignored while typing in a field).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const typing = el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
+      if (!typing && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+        setOpen((o) => !o);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const reset = useNumeraStore((s) => s.reset);
   const {
@@ -45,6 +59,19 @@ export default function FlowControls() {
   } = useFlowNav();
 
   if (!mounted) return null;
+
+  // Collapsed: a small unobtrusive pill to bring the demo controls back.
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        title="Show demo controls (Shift+D)"
+        className="fixed bottom-3 right-3 z-50 rounded-full border border-[#c8c8c8] bg-white/95 backdrop-blur px-3 py-1.5 text-[10px] font-semibold tracking-widest uppercase text-[#9a9a9a] hover:text-[#1a1a1a] hover:border-[#9a9a9a] transition-colors"
+      >
+        Demo
+      </button>
+    );
+  }
 
   const idx = topicIndex(currentTopicId);
   const topic = topicById(currentTopicId);
@@ -113,15 +140,24 @@ export default function FlowControls() {
           </Btn>
         )}
 
-        <button
-          onClick={() => {
-            reset();
-            router.push('/onboard');
-          }}
-          className="ml-auto text-[11px] text-[#9a9a9a] hover:text-[#1a1a1a] underline underline-offset-2"
-        >
-          Reset demo
-        </button>
+        <div className="ml-auto flex items-center gap-3">
+          <button
+            onClick={() => {
+              reset();
+              router.push('/onboard');
+            }}
+            className="text-[11px] text-[#9a9a9a] hover:text-[#1a1a1a] underline underline-offset-2"
+          >
+            Reset demo
+          </button>
+          <button
+            onClick={() => setOpen(false)}
+            title="Hide demo controls (Shift+D)"
+            className="rounded border border-[#c8c8c8] px-1.5 py-0.5 text-[11px] font-semibold text-[#9a9a9a] hover:text-[#1a1a1a] hover:border-[#9a9a9a] transition-colors"
+          >
+            Hide
+          </button>
+        </div>
       </div>
     </div>
   );
