@@ -8,6 +8,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { LearningPhase } from '@/lib/phases';
+import type { FlowStage } from '@/lib/flow';
+import { TOPICS } from '@/lib/topics';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -161,6 +163,12 @@ export interface NumeraState {
   // Learning-flow funnel (persisted) — which gated phases the student has cleared
   phasesDone: LearningPhase[];
 
+  // Adaptive per-topic loop (persisted) — see lib/flow.ts
+  entryTopicId: string | null;            // topic N, assigned by the Main Diagnostic
+  currentTopicId: string;                 // topic the student is on right now
+  flowStage: FlowStage;                   // stage within the current topic
+  masteryByTopic: Record<string, boolean>; // topics the student has mastered
+
   // Student profile (persisted) — age drives the Key Stage they're shown
   studentAge: number;
 
@@ -215,6 +223,10 @@ export interface NumeraState {
   setPracticeDone: () => void;
   setStudentAge: (age: number) => void;
   completePhase: (phase: LearningPhase) => void;
+  setEntryTopic: (id: string) => void;
+  setCurrentTopic: (id: string) => void;
+  setFlowStage: (stage: FlowStage) => void;
+  setMastery: (id: string, value: boolean) => void;
   startChallenge: (problem: string) => void;
   endChallenge: () => void;
   setReviewStatus: (s: ReviewStatus) => void;
@@ -241,6 +253,7 @@ const initial: Omit<
   | 'upsertParticipant' | 'removeParticipant' | 'setParticipantCursor'
   | 'addRemoteItem' | 'toggleLessonLearned' | 'setPracticeDone' | 'setStudentAge'
   | 'completePhase'
+  | 'setEntryTopic' | 'setCurrentTopic' | 'setFlowStage' | 'setMastery'
   | 'startChallenge' | 'endChallenge'
   | 'setReviewStatus' | 'addCommentary' | 'setSpotlight' | 'addBoardItem'
   | 'setPrivateFeedback' | 'reset'
@@ -295,6 +308,10 @@ const initial: Omit<
   completedLessons: [],
   practiceCompleted: false,
   phasesDone: [],
+  entryTopicId: null,
+  currentTopicId: TOPICS[0].id,
+  flowStage: 'orientation',
+  masteryByTopic: {},
   studentAge: 14,
   challengeActive: false,
   challengeProblem: '3x + 5 = 20',
@@ -448,6 +465,15 @@ export const useNumeraStore = create<NumeraState>()(
         : { phasesDone: [...s.phasesDone, phase] }
     ),
 
+  // Main Diagnostic places the student at topic N: it becomes both the entry
+  // topic and the current one, started at orientation.
+  setEntryTopic: (id) =>
+    set({ entryTopicId: id, currentTopicId: id, flowStage: 'orientation' }),
+  setCurrentTopic: (currentTopicId) => set({ currentTopicId }),
+  setFlowStage: (flowStage) => set({ flowStage }),
+  setMastery: (id, value) =>
+    set((s) => ({ masteryByTopic: { ...s.masteryByTopic, [id]: value } })),
+
   startChallenge: (challengeProblem) =>
     set({
       challengeActive: true,
@@ -500,6 +526,10 @@ export const useNumeraStore = create<NumeraState>()(
         completedLessons: s.completedLessons,
         practiceCompleted: s.practiceCompleted,
         phasesDone: s.phasesDone,
+        entryTopicId: s.entryTopicId,
+        currentTopicId: s.currentTopicId,
+        flowStage: s.flowStage,
+        masteryByTopic: s.masteryByTopic,
         studentAge: s.studentAge,
       }),
       // Hydrate manually after mount to avoid SSR/client mismatch (see AppShell).

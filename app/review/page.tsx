@@ -13,13 +13,13 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import Link from 'next/link';
 import {
-  Check, X, ChevronLeft, ChevronRight, Volume2, Square, Eye, EyeOff, BookOpen,
+  Check, X, ChevronLeft, ChevronRight, Volume2, Square, Eye, EyeOff,
 } from 'lucide-react';
 import PageShell, { Chip } from '@/components/PageShell';
 import PhaseGate from '@/components/PhaseGate';
 import { useNumeraStore } from '@/store/useNumeraStore';
+import { useFlowNav } from '@/lib/useFlowNav';
 import { cn } from '@/lib/cn';
 
 /** A line of the student's working, with any tutor mark attached. */
@@ -124,6 +124,7 @@ export default function ReviewPage() {
   const [speakingId, setSpeakingId] = useState<string | null>(null);
 
   const completePhase = useNumeraStore((s) => s.completePhase);
+  const { decideReview } = useFlowNav();
 
   const total = WORKSHEETS.length;
   const done = i >= total;                 // past the last sheet → final summary
@@ -304,19 +305,39 @@ export default function ReviewPage() {
               ))}
             </div>
 
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => goto(total - 1)}
-                className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[#7a7a7a] hover:text-[#1a1a1a] transition-colors"
-              >
-                <ChevronLeft size={15} strokeWidth={1.8} /> Back to worksheets
-              </button>
-              <Link
-                href="/keynotes"
-                className="inline-flex items-center gap-2 rounded-md bg-[#1a1a1a] text-white px-5 py-2.5 text-[13px] font-semibold hover:opacity-80 transition-opacity"
-              >
-                <BookOpen size={15} strokeWidth={1.9} /> Key Notes at a glance
-              </Link>
+            <button
+              onClick={() => goto(total - 1)}
+              className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[#7a7a7a] hover:text-[#1a1a1a] transition-colors"
+            >
+              <ChevronLeft size={15} strokeWidth={1.8} /> Back to worksheets
+            </button>
+
+            {/* Decision point — where the tutor routes the student next. */}
+            <div className="mt-6 rounded-lg border border-[#c8c8c8] bg-[#f4f4f4] p-4">
+              <div className="text-[10px] tracking-widest uppercase text-[#9a9a9a] mb-3">What happens next</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <button
+                  onClick={() => decideReview('foundation_weak')}
+                  className="rounded-md border border-[#c8c8c8] bg-white px-3 py-3 text-left hover:border-[#1a1a1a] transition-colors"
+                >
+                  <div className="text-[13px] font-semibold text-[#1a1a1a]">Foundation weak</div>
+                  <div className="text-[11.5px] text-[#7a7a7a] mt-0.5">Recap the concept — back to orientation.</div>
+                </button>
+                <button
+                  onClick={() => decideReview('cant_solve')}
+                  className="rounded-md border border-[#c8c8c8] bg-white px-3 py-3 text-left hover:border-[#1a1a1a] transition-colors"
+                >
+                  <div className="text-[13px] font-semibold text-[#1a1a1a]">Can&apos;t solve yet</div>
+                  <div className="text-[11.5px] text-[#7a7a7a] mt-0.5">Knows it, needs help applying — back to guided.</div>
+                </button>
+                <button
+                  onClick={() => decideReview('pass')}
+                  className="rounded-md border border-[#1a1a1a] bg-[#1a1a1a] px-3 py-3 text-left text-white hover:opacity-80 transition-opacity"
+                >
+                  <div className="text-[13px] font-semibold">Mastered</div>
+                  <div className="text-[11.5px] text-white/70 mt-0.5">On to the next topic.</div>
+                </button>
+              </div>
             </div>
           </div>
         )}

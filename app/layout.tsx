@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import ToolRail from '@/components/ToolRail';
 import AppShell from '@/components/AppShell';
+import FlowControls from '@/components/FlowControls';
 
 export const metadata: Metadata = {
   title: 'Numera — AI Math Tutor',
@@ -24,6 +25,8 @@ export default function RootLayout({
           <ToolRail />
           <AppShell>{children}</AppShell>
         </div>
+        {/* Demo Director — drives the adaptive loop by hand (remove for prod) */}
+        <FlowControls />
       </body>
     </html>
   );

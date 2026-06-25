@@ -12,13 +12,13 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter, notFound } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   ChevronLeft, Compass, Play, Pause, RotateCw, ArrowRight, Check, Film, AlertTriangle,
 } from 'lucide-react';
 import { getTopic } from '@/lib/curriculum';
-import { useNumeraStore } from '@/store/useNumeraStore';
+import { useFlowNav } from '@/lib/useFlowNav';
 import { Skeleton } from '@/components/PageShell';
 import { cn } from '@/lib/cn';
 
@@ -45,9 +45,8 @@ function fetchOrientationVideo(topicId: string): Promise<VideoMeta | null> {
 }
 
 export default function OrientationClient({ topicId }: { topicId: string }) {
-  const router = useRouter();
+  const { goStage } = useFlowNav();
   const topic = getTopic(topicId);
-  const completePhase = useNumeraStore((s) => s.completePhase);
 
   const [status, setStatus] = useState<Status>('loading');
   const [video, setVideo] = useState<VideoMeta | null>(null);
@@ -85,10 +84,8 @@ export default function OrientationClient({ topicId }: { topicId: string }) {
 
   const watched = progress >= 100;
 
-  const finish = () => {
-    completePhase('orientation');
-    router.push('/workbook');
-  };
+  // Orientation done → into the live Guided Learning lesson for this topic.
+  const finish = () => goStage('guided', topicId);
 
   return (
     <main className="flex-1 min-w-0 flex flex-col bg-white" aria-label="Concept orientation">
@@ -186,7 +183,7 @@ export default function OrientationClient({ topicId }: { topicId: string }) {
               </span>
               <h3 className="text-[15px] font-semibold text-[#1a1a1a]">Orientation video coming soon</h3>
               <p className="text-[12.5px] text-[#7a7a7a] mt-1.5 max-w-sm leading-relaxed">
-                We haven&apos;t recorded the concept video for {topic.title} yet — you can head straight into your workbook.
+                We haven&apos;t recorded the concept video for {topic.title} yet — you can head straight into the guided lesson.
               </p>
             </div>
           )}
@@ -224,7 +221,7 @@ export default function OrientationClient({ topicId }: { topicId: string }) {
                 disabled={status === 'error'}
                 className="inline-flex items-center justify-center gap-2 rounded-md bg-[#1a1a1a] text-white px-5 py-2.5 text-[13px] font-semibold hover:opacity-80 disabled:opacity-30 transition-opacity"
               >
-                Continue to workbook <ArrowRight size={16} strokeWidth={2} />
+                Continue to guided lesson <ArrowRight size={16} strokeWidth={2} />
               </button>
             </div>
           )}

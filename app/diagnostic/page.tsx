@@ -8,9 +8,9 @@
  */
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { ClipboardCheck, ArrowRight, Check } from 'lucide-react';
 import { useNumeraStore } from '@/store/useNumeraStore';
+import { useFlowNav } from '@/lib/useFlowNav';
 import { cn } from '@/lib/cn';
 
 interface Q { prompt: string; options: string[]; answer: number }
@@ -34,6 +34,7 @@ export default function DiagnosticPage() {
   const [score, setScore] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const completePhase = useNumeraStore((s) => s.completePhase);
+  const { placeAtTopic } = useFlowNav();
 
   // Reaching the result clears the diagnostic phase → unlocks orientation.
   useEffect(() => {
@@ -55,10 +56,12 @@ export default function DiagnosticPage() {
     }, 450);
   };
 
+  // Placement maps the score onto a starting topic (Topic N). The id must match
+  // a flow topic so the loop has content from here on (see lib/topics.ts).
   const placement =
-    score <= 1 ? { topic: 'Linear equations', ks: 'KS3', note: 'We’ll build the basics first.' }
-    : score <= 3 ? { topic: 'Expressions', ks: 'KS4', note: 'You’re ready for GCSE-level work.' }
-    : { topic: 'Intro to calculus', ks: 'KS5', note: 'Strong start — let’s stretch you.' };
+    score <= 1 ? { id: 'algebra', topic: 'Algebra', ks: 'KS3', note: 'We’ll build the basics first.' }
+    : score <= 3 ? { id: 'number', topic: 'Number', ks: 'KS4', note: 'You’re ready for GCSE-level work.' }
+    : { id: 'geometry', topic: 'Geometry', ks: 'KS5', note: 'Strong start — let’s stretch you.' };
 
   return (
     <main className="flex-1 min-w-0 flex items-center justify-center bg-white p-8" aria-label="Diagnostic">
@@ -136,9 +139,9 @@ export default function DiagnosticPage() {
               <div className="text-[10px] tracking-widest uppercase text-[#9a9a9a] mb-1">We&apos;ll start you at</div>
               <div className="text-[16px] font-semibold text-[#1a1a1a]">{placement.topic} <span className="text-[#7a7a7a] font-normal">· {placement.ks}</span></div>
             </div>
-            <Link href="/orientation/algebra" className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#1a1a1a] text-white px-4 py-3 text-[13px] font-semibold hover:opacity-80 transition-opacity">
+            <button onClick={() => placeAtTopic(placement.id)} className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#1a1a1a] text-white px-4 py-3 text-[13px] font-semibold hover:opacity-80 transition-opacity">
               Begin orientation <ArrowRight size={16} strokeWidth={2} />
-            </Link>
+            </button>
           </div>
         )}
       </div>

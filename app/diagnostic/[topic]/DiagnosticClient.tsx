@@ -10,9 +10,10 @@
  */
 
 import { useState } from 'react';
-import { useRouter, notFound } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { Compass, ArrowRight, Check } from 'lucide-react';
 import { getTopic } from '@/lib/curriculum';
+import { useFlowNav } from '@/lib/useFlowNav';
 import { cn } from '@/lib/cn';
 
 interface Q { prompt: string; options: string[]; answer: number }
@@ -43,7 +44,7 @@ const GENERIC: Q[] = [
 ];
 
 export default function DiagnosticClient({ topicId }: { topicId: string }) {
-  const router = useRouter();
+  const { decideDiagnostic } = useFlowNav();
   const topic = getTopic(topicId);
   const questions = PROBES[topicId] ?? GENERIC;
 
@@ -65,7 +66,6 @@ export default function DiagnosticClient({ topicId }: { topicId: string }) {
   };
 
   const ready = score >= Math.ceil(questions.length / 2);
-  const orientationHref = `/orientation/${topic.id}`;
 
   return (
     <main className="flex-1 min-w-0 flex items-center justify-center bg-white p-8" aria-label="Topic check">
@@ -121,14 +121,14 @@ export default function DiagnosticClient({ topicId }: { topicId: string }) {
             <h1 className="text-[22px] font-semibold text-[#1a1a1a]">Ready to begin</h1>
             <p className="text-[13px] text-[#7a7a7a] mt-2">
               {ready
-                ? `You've got the basics — we'll start ${topic.title} at the normal point.`
-                : `We'll ease into ${topic.title} and recap the foundations first.`}
+                ? `You already know the concept — we'll skip ahead to guided ${topic.title}.`
+                : `We'll ease into ${topic.title} with the concept orientation first.`}
             </p>
             <button
-              onClick={() => router.push(orientationHref)}
+              onClick={() => decideDiagnostic(ready, topic.id)}
               className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-md bg-[#1a1a1a] text-white px-4 py-3 text-[13px] font-semibold hover:opacity-80 transition-opacity"
             >
-              Begin orientation <ArrowRight size={16} strokeWidth={2} />
+              {ready ? 'Start guided learning' : 'Begin orientation'} <ArrowRight size={16} strokeWidth={2} />
             </button>
           </div>
         )}

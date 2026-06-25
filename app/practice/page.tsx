@@ -9,9 +9,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { Eye, EyeOff, Lightbulb, Check, ArrowRight } from 'lucide-react';
 import { useNumeraStore } from '@/store/useNumeraStore';
+import { useFlowNav } from '@/lib/useFlowNav';
 import PhaseGate from '@/components/PhaseGate';
 import Toolbar from '@/components/Canvas/Toolbar';
 import { cn } from '@/lib/cn';
@@ -33,6 +33,7 @@ export default function PracticePage() {
   const practiceCompleted = useNumeraStore((s) => s.practiceCompleted);
   const setPracticeDone = useNumeraStore((s) => s.setPracticeDone);
   const completePhase = useNumeraStore((s) => s.completePhase);
+  const { goStage } = useFlowNav();
 
   const [mode, setMode] = useState<AIMode>('observing');
   const [hintIndex, setHintIndex] = useState(0);
@@ -123,12 +124,12 @@ export default function PracticePage() {
             <span className="flex items-center gap-2 bg-[#1a1a1a] text-white rounded-full px-4 py-2 text-[12px]">
               <Check size={14} strokeWidth={2} /> Practice saved — nice work.
             </span>
-            <Link
-              href="/review"
+            <button
+              onClick={() => goStage('review')}
               className="flex items-center gap-1.5 rounded-full border border-[#1a1a1a] bg-white px-4 py-2 text-[12px] font-semibold text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-colors"
             >
               Review with tutor <ArrowRight size={13} strokeWidth={2} />
-            </Link>
+            </button>
           </div>
         )}
 
