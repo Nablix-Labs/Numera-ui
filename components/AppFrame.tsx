@@ -35,11 +35,17 @@ export default function AppFrame({ children }: { children: ReactNode }) {
     return <div className="flex-1 flex min-w-0">{children}</div>;
   }
 
+  // The AI tutor panel belongs to the live lesson only; every other in-app
+  // route keeps the tool rail for navigation but renders content full-width.
+  const isLesson = pathname === '/';
+
   return (
     <>
       <ToolRail />
       <div className="flex-1 flex min-w-0">
-        {panelSide === 'left' ? (
+        {!isLesson ? (
+          children
+        ) : panelSide === 'left' ? (
           <>
             <MediaPanel />
             {children}
