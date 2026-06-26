@@ -34,6 +34,7 @@ export default function DiagnosticPage() {
   const [score, setScore] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const completePhase = useNumeraStore((s) => s.completePhase);
+  const studentName = useNumeraStore((s) => s.studentName);
   const { placeAtTopic } = useFlowNav();
 
   // Reaching the result clears the diagnostic phase → unlocks orientation.
@@ -71,7 +72,7 @@ export default function DiagnosticPage() {
             <div className="w-12 h-12 mx-auto rounded-xl bg-[#1a1a1a] text-white flex items-center justify-center mb-4">
               <ClipboardCheck size={22} strokeWidth={1.8} />
             </div>
-            <h1 className="text-[22px] font-semibold text-[#1a1a1a]">Quick diagnostic</h1>
+            <h1 className="text-[22px] font-semibold text-[#1a1a1a]">{studentName ? `Nice to meet you, ${studentName}` : 'Quick diagnostic'}</h1>
             <p className="text-[13px] text-[#7a7a7a] mt-2 leading-relaxed">
               A one-time check so Numera knows your level and picks the right first topic. You only take this once — no pressure.
             </p>

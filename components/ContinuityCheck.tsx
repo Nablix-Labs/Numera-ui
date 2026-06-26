@@ -17,6 +17,7 @@ const RECAP = { prompt: 'Quick recap — solve: 2x + 5 = 13', options: ['x = 4',
 
 export default function ContinuityCheck() {
   const completedLessons = useNumeraStore((s) => s.completedLessons);
+  const studentName = useNumeraStore((s) => s.studentName);
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<number | null>(null);
 
@@ -37,7 +38,7 @@ export default function ContinuityCheck() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 p-4" role="dialog" aria-modal="true" aria-label="Welcome back check">
       <div className="w-[420px] max-w-full bg-white border border-[#9a9a9a] rounded-xl overflow-hidden" style={{ boxShadow: '0 14px 48px rgba(0,0,0,0.24)' }}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#eaeaea]">
-          <span className="text-[14px] font-semibold text-[#1a1a1a]">Welcome back 👋</span>
+          <span className="text-[14px] font-semibold text-[#1a1a1a]">{studentName ? `Welcome back, ${studentName}` : 'Welcome back'}</span>
           <button onClick={() => setOpen(false)} aria-label="Close" className="w-7 h-7 rounded-md flex items-center justify-center text-[#7a7a7a] hover:bg-[#f4f4f4]">
             <X size={16} strokeWidth={1.8} />
           </button>

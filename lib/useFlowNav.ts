@@ -66,7 +66,7 @@ export function useFlowNav() {
     setMastery(currentTopicId, true);
     const next = nextTopicId(currentTopicId);
     if (!next) {
-      setFlowStage('review'); // last topic mastered — stay put
+      router.push('/complete'); // every topic mastered — course complete
       return;
     }
     goStage(entryStage(next, entryTopicId), next);

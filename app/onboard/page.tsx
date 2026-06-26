@@ -8,10 +8,17 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useNumeraStore } from '@/store/useNumeraStore';
 
 export default function OnboardPage() {
   const router = useRouter();
+  const setStudentName = useNumeraStore((s) => s.setStudentName);
   const [name, setName] = useState('');
+
+  const start = () => {
+    setStudentName(name.trim());
+    router.push('/diagnostic');
+  };
 
   return (
     <main className="flex-1 min-w-0 flex items-center justify-center bg-white p-8" aria-label="Welcome">
@@ -30,13 +37,14 @@ export default function OnboardPage() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && name.trim() && start()}
             placeholder="Your name"
             className="mt-1.5 w-full rounded-md border border-[#c8c8c8] bg-white px-3.5 py-2.5 text-[14px] text-[#1a1a1a] placeholder:text-[#9a9a9a] focus:border-[#1a1a1a] focus:outline-none transition-colors"
           />
         </label>
 
         <button
-          onClick={() => router.push('/diagnostic')}
+          onClick={start}
           disabled={name.trim().length === 0}
           className="mt-5 w-full rounded-md bg-[#1a1a1a] text-white px-4 py-3 text-[13px] font-semibold hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
         >

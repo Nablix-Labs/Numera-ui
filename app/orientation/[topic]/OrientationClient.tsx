@@ -214,7 +214,7 @@ export default function OrientationClient({ topicId }: { topicId: string }) {
                 onClick={finish}
                 className="text-[12px] font-semibold text-[#7a7a7a] hover:text-[#1a1a1a] transition-colors"
               >
-                Skip <span className="text-[#9a9a9a]">(testing only)</span>
+                Skip video
               </button>
               <button
                 onClick={finish}

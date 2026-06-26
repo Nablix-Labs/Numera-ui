@@ -43,10 +43,10 @@ export default function HistoryPage() {
                 <ProgressBar value={pct} />
               </div>
               <Link
-                href="/review"
+                href="/"
                 className="flex-shrink-0 text-[12px] font-semibold text-[#1a1a1a] underline-offset-4 hover:underline"
               >
-                Review
+                Open
               </Link>
             </div>
           );

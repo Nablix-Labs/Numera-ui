@@ -171,6 +171,7 @@ export interface NumeraState {
 
   // Student profile (persisted) — age drives the Key Stage they're shown
   studentAge: number;
+  studentName: string; // collected at onboarding, used for greetings
 
   // Group Challenge Mode
   challengeActive: boolean;
@@ -223,6 +224,7 @@ export interface NumeraState {
   toggleLessonLearned: (lessonId: string) => void;
   setPracticeDone: () => void;
   setStudentAge: (age: number) => void;
+  setStudentName: (name: string) => void;
   completePhase: (phase: LearningPhase) => void;
   setEntryTopic: (id: string) => void;
   setCurrentTopic: (id: string) => void;
@@ -252,7 +254,7 @@ const initial: Omit<
   | 'toggleTranscript' | 'setToolbarPos' | 'toggleToolbarCollapsed' | 'setToolbarOrientation'
   | 'setCanvasExporter' | 'startGroupSession' | 'endGroupSession'
   | 'upsertParticipant' | 'removeParticipant' | 'setParticipantCursor'
-  | 'addRemoteItem' | 'toggleLessonLearned' | 'setPracticeDone' | 'setStudentAge'
+  | 'addRemoteItem' | 'toggleLessonLearned' | 'setPracticeDone' | 'setStudentAge' | 'setStudentName'
   | 'completePhase'
   | 'setEntryTopic' | 'setCurrentTopic' | 'setFlowStage' | 'setMastery'
   | 'startChallenge' | 'endChallenge'
@@ -314,6 +316,7 @@ const initial: Omit<
   flowStage: 'orientation',
   masteryByTopic: {},
   studentAge: 14,
+  studentName: '',
   challengeActive: false,
   challengeProblem: '3x + 5 = 20',
   reviewStatus: 'idle',
@@ -468,6 +471,7 @@ export const useNumeraStore = create<NumeraState>()(
     })),
   setPracticeDone: () => set({ practiceCompleted: true }),
   setStudentAge: (studentAge) => set({ studentAge }),
+  setStudentName: (studentName) => set({ studentName }),
 
   completePhase: (phase) =>
     set((s) =>
@@ -542,8 +546,9 @@ export const useNumeraStore = create<NumeraState>()(
         flowStage: s.flowStage,
         masteryByTopic: s.masteryByTopic,
         studentAge: s.studentAge,
+        studentName: s.studentName,
       }),
-      // Hydrate manually after mount to avoid SSR/client mismatch (see AppShell).
+      // Hydrate manually after mount to avoid SSR/client mismatch (see AppFrame).
       skipHydration: true,
     }
   )

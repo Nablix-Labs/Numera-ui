@@ -17,7 +17,7 @@ interface ChatMsg { id: string; author: string; color: string; text: string; you
 const SEED_CHAT: ChatMsg[] = [
   { id: 'c1', author: 'Aïsha', color: '#2563eb', text: 'wait do we subtract 5 first?' },
   { id: 'c2', author: 'Liam', color: '#d97706', text: 'yeah then divide by 3' },
-  { id: 'c3', author: 'Wei', color: '#0d9488', text: 'got x = 5 🎉' },
+  { id: 'c3', author: 'Wei', color: '#0d9488', text: 'got x = 5, nice' },
 ];
 
 export default function SharedBoard() {

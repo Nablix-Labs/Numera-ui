@@ -5,7 +5,7 @@
  * complete (see lib/phases.ts). While the persisted store rehydrates it shows a
  * neutral loading skeleton (no flash of the gate). If a prerequisite is missing
  * it renders a gate screen pointing the student at the next step, plus a
- * "Skip — testing only" bypass that marks the outstanding phases done.
+ * "Continue anyway" bypass that marks the outstanding phases done.
  */
 
 import { useEffect, useState, type ReactNode } from 'react';
@@ -76,7 +76,7 @@ export default function PhaseGate({
           onClick={() => missing.forEach(completePhase)}
           className="mt-3 w-full rounded-md border border-[#c8c8c8] bg-white px-4 py-2.5 text-[12px] font-semibold text-[#7a7a7a] hover:text-[#1a1a1a] hover:border-[#9a9a9a] transition-colors"
         >
-          Skip <span className="text-[#9a9a9a]">(testing only)</span>
+          Continue anyway
         </button>
       </div>
     </main>

@@ -15,7 +15,7 @@ import MediaPanel from './MediaPanel';
 import { useNumeraStore } from '@/store/useNumeraStore';
 
 // Routes that render on their own, without the tool rail or media panel.
-const FOCUS_ROUTES = ['/onboard', '/diagnostic', '/orientation'];
+const FOCUS_ROUTES = ['/onboard', '/diagnostic', '/orientation', '/complete'];
 
 export default function AppFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname();
