@@ -78,6 +78,25 @@ export interface TranscriptMessage {
   timestamp: number;
 }
 
+/**
+ * One entry in the current session's interaction trail.
+ *
+ * The backend stores no transcript and resets on reload (see
+ * api-endpoint-readiness.docx), so the frontend keeps its own ordered record of
+ * what happened this run — question shown, student answer, canvas/OCR result,
+ * tutor reply, hint. Kept in memory only (never persisted), matching the store's
+ * policy for ephemeral session state.
+ */
+export type TrailKind = 'question' | 'answer' | 'canvas' | 'tutor' | 'hint';
+
+export interface TrailEntry {
+  id: string;
+  kind: TrailKind;
+  text: string;
+  meta?: string; // short detail, e.g. OCR confidence, hint level, evaluation
+  timestamp: number;
+}
+
 /** A participant in a group/live session. Cursor is normalised 0–1. */
 export interface Participant {
   id: string;
@@ -126,6 +145,9 @@ export interface NumeraState {
 
   // Transcript
   transcript: TranscriptMessage[];
+
+  // Current-session interaction trail (in-memory; backend keeps no transcript)
+  interactionTrail: TrailEntry[];
 
   // Canvas / drawing
   activeTool: DrawingTool;
@@ -194,6 +216,8 @@ export interface NumeraState {
   addTranscriptMessage: (msg: Omit<TranscriptMessage, 'id' | 'timestamp'>) => void;
   setTranscript: (msgs: Pick<TranscriptMessage, 'role' | 'text'>[]) => void;
   updatePartialTranscript: (text: string) => void;
+  addTrailEntry: (entry: Omit<TrailEntry, 'id' | 'timestamp'>) => void;
+  clearTrail: () => void;
   setActiveTool: (t: DrawingTool) => void;
   setShapeKind: (k: ShapeKind) => void;
   setEraserMode: (m: EraserMode) => void;
@@ -246,7 +270,8 @@ const initial: Omit<
   NumeraState,
   | 'setSessionId' | 'setSessionState' | 'setActiveSlide' | 'setTotalSlides'
   | 'setQuestionText' | 'setQuestionNumber' | 'toggleMic' | 'setVoiceStatus'
-  | 'addTranscriptMessage' | 'setTranscript' | 'updatePartialTranscript' | 'setActiveTool'
+  | 'addTranscriptMessage' | 'setTranscript' | 'updatePartialTranscript'
+  | 'addTrailEntry' | 'clearTrail' | 'setActiveTool'
   | 'setShapeKind' | 'setEraserMode'
   | 'setStrokeColor' | 'setStrokeWidth' | 'addItem' | 'removeItem' | 'undo' | 'redo'
   | 'clearCanvas' | 'applyCanvasDraw' | 'clearTutorMarks'
@@ -289,6 +314,7 @@ const initial: Omit<
       timestamp: Date.now() - 10_000,
     },
   ],
+  interactionTrail: [],
   activeTool: 'pen',
   shapeKind: 'rect',
   eraserMode: 'stroke',
@@ -390,6 +416,16 @@ export const useNumeraStore = create<NumeraState>()(
         ],
       };
     }),
+
+  addTrailEntry: (entry) =>
+    set((s) => ({
+      interactionTrail: [
+        ...s.interactionTrail,
+        { ...entry, id: crypto.randomUUID(), timestamp: Date.now() },
+      ],
+    })),
+
+  clearTrail: () => set({ interactionTrail: [] }),
 
   setActiveTool: (activeTool) => set({ activeTool }),
   setShapeKind: (shapeKind) => set({ shapeKind, activeTool: 'shape' }),
