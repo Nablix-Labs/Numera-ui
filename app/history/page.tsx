@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import PageShell, { ProgressBar } from '@/components/PageShell';
+import SessionTrail from '@/components/SessionTrail';
 
 interface Session {
   date: string;
@@ -23,6 +24,7 @@ export default function HistoryPage() {
       title="History"
       subtitle="A record of your past tutoring sessions."
     >
+      <SessionTrail />
       <div className="rounded-lg border border-[#c8c8c8] divide-y divide-[#eaeaea] overflow-hidden">
         {SESSIONS.map((s, i) => {
           const pct = Math.round((s.correct / s.questions) * 100);
