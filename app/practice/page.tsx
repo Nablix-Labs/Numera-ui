@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic';
 import { Eye, EyeOff, Lightbulb, Check, ArrowRight } from 'lucide-react';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import { useFlowNav } from '@/lib/useFlowNav';
+import { useDemoTutor } from '@/hooks/useDemoTutor';
 import { demoFor } from '@/lib/demoContent';
 import PhaseGate from '@/components/PhaseGate';
 import Toolbar from '@/components/Canvas/Toolbar';
@@ -29,11 +30,17 @@ export default function PracticePage() {
   const completePhase = useNumeraStore((s) => s.completePhase);
   const currentTopicId = useNumeraStore((s) => s.currentTopicId);
   const { goStage } = useFlowNav();
+  const tutor = useDemoTutor();
 
   // Practice problem + hints for the placed topic.
   const demo = demoFor(currentTopicId);
   const QUESTION = demo.practiceQuestion;
   const HINTS = demo.practiceHints;
+
+  // Backend context for this practice problem. concept_id is the topic; the
+  // question_id just needs to be a stable non-empty identifier for the demo.
+  const PHASE = 'GUIDED_PRACTICE';
+  const QUESTION_ID = `${currentTopicId}_PRACTICE`;
 
   const [mode, setMode] = useState<AIMode>('observing');
   const [hintIndex, setHintIndex] = useState(0);
@@ -43,6 +50,14 @@ export default function PracticePage() {
   const handleExportReady = useCallback((fn: () => string | null) => {
     setCanvasExporter(fn);
   }, [setCanvasExporter]);
+
+  // Start a backend session once on entry (no-op unless an API base URL is set).
+  useEffect(() => {
+    if (tutor.apiEnabled && !tutor.sessionId) {
+      void tutor.start(currentTopicId, 'TEXT');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // After a pause in activity, the observer offers a hint (unless gone quiet)
   useEffect(() => {
@@ -54,10 +69,22 @@ export default function PracticePage() {
 
   const requestHint = () => {
     setMode('hint');
+    void tutor.hint({
+      concept_id: currentTopicId,
+      question_id: QUESTION_ID,
+      current_phase: PHASE,
+      current_hint_count: hintIndex,
+    });
     setHintIndex((i) => Math.min(i + 1, HINTS.length - 1));
   };
 
-  const finish = () => { setDone(true); setPracticeDone(); completePhase('practice'); };
+  const finish = () => {
+    // Submit the canvas for live OCR + tutor feedback (best-effort).
+    void tutor.submitCanvasWork();
+    setDone(true);
+    setPracticeDone();
+    completePhase('practice');
+  };
 
   return (
     <PhaseGate phase="practice">
