@@ -134,6 +134,8 @@ export interface InteractionPayload {
   /** Use for VOICE input instead of text_input. */
   voice_transcript?: string;
   transcript_confidence?: number;
+  /** Reference to a prior /canvas/submit so the turn carries the canvas work. */
+  canvas_snapshot_id?: string;
   current_phase: string;
   concept_id: string;
   question_id: string;
