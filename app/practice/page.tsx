@@ -13,6 +13,7 @@ import { Eye, EyeOff, Lightbulb, Check, ArrowRight } from 'lucide-react';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import { useFlowNav } from '@/lib/useFlowNav';
 import { useDemoTutor } from '@/hooks/useDemoTutor';
+import { useVoiceTurn } from '@/hooks/useVoiceTurn';
 import { demoFor } from '@/lib/demoContent';
 import PhaseGate from '@/components/PhaseGate';
 import Toolbar from '@/components/Canvas/Toolbar';
@@ -41,6 +42,20 @@ export default function PracticePage() {
   // question_id just needs to be a stable non-empty identifier for the demo.
   const PHASE = 'GUIDED_PRACTICE';
   const QUESTION_ID = `${currentTopicId}_PRACTICE`;
+
+  // Hands-free voice: on turn-end, fire the transcript + canvas to the backend.
+  const { submitVoiceTurn } = tutor;
+  const onTurnEnd = useCallback(
+    (transcript: string, confidence?: number) => {
+      void submitVoiceTurn(
+        transcript,
+        { concept_id: currentTopicId, question_id: QUESTION_ID, current_phase: PHASE, hint_count: 0 },
+        confidence
+      );
+    },
+    [submitVoiceTurn, currentTopicId, QUESTION_ID]
+  );
+  const voice = useVoiceTurn({ onTurnEnd });
 
   const [mode, setMode] = useState<AIMode>('observing');
   const [hintIndex, setHintIndex] = useState(0);
@@ -164,6 +179,24 @@ export default function PracticePage() {
 
         {/* Actions */}
         <div className="absolute bottom-5 right-6 z-20 flex items-center gap-2">
+          {voice.supported && (
+            <button
+              onClick={() => (voice.active ? voice.stop() : voice.start())}
+              className={cn(
+                'rounded-full border px-4 py-2 text-[12px] font-semibold transition-colors',
+                voice.active
+                  ? 'border-[#1a1a1a] bg-[#1a1a1a] text-white'
+                  : 'border-[#9a9a9a] bg-white text-[#1a1a1a] hover:bg-[#f4f4f4]'
+              )}
+              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+            >
+              {voice.active
+                ? voice.speaking
+                  ? 'Listening…'
+                  : 'Voice on — tap to stop'
+                : 'Hands-free voice'}
+            </button>
+          )}
           {mode !== 'quiet' && (
             <button
               onClick={requestHint}
