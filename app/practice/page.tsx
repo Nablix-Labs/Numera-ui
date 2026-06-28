@@ -60,6 +60,9 @@ export default function PracticePage() {
   const [mode, setMode] = useState<AIMode>('observing');
   const [hintIndex, setHintIndex] = useState(0);
   const [done, setDone] = useState(false);
+  // Voice support is browser-only; gate render on mount to avoid SSR mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleExportReady = useCallback((fn: () => string | null) => {
@@ -179,7 +182,7 @@ export default function PracticePage() {
 
         {/* Actions */}
         <div className="absolute bottom-5 right-6 z-20 flex items-center gap-2">
-          {voice.supported && (
+          {mounted && voice.supported && (
             <button
               onClick={() => (voice.active ? voice.stop() : voice.start())}
               className={cn(
