@@ -8,12 +8,14 @@
  * navigation strip and the drawing canvas.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import SlideDots from '@/components/SlideDots';
 import CanvasStage from '@/components/Canvas';
 import ContinuityCheck from '@/components/ContinuityCheck';
 import { useFlowNav } from '@/lib/useFlowNav';
 import { useNumeraStore } from '@/store/useNumeraStore';
+import { useDemoTutor } from '@/hooks/useDemoTutor';
+import { useVoiceTurn } from '@/hooks/useVoiceTurn';
 import { demoFor } from '@/lib/demoContent';
 
 export default function LessonPage() {
@@ -21,6 +23,8 @@ export default function LessonPage() {
   const setQuestionText = useNumeraStore((s) => s.setQuestionText);
   const setQuestionNumber = useNumeraStore((s) => s.setQuestionNumber);
   const setTranscript = useNumeraStore((s) => s.setTranscript);
+  const micMuted = useNumeraStore((s) => s.micMuted);
+  const setMicMuted = useNumeraStore((s) => s.setMicMuted);
 
   // Wait for the persisted store to rehydrate before writing lesson content —
   // writing earlier would persist default state over the saved placement.
@@ -38,6 +42,42 @@ export default function LessonPage() {
     setQuestionNumber(demo.questionNumber);
     setTranscript(demo.transcript);
   }, [hydrated, currentTopicId, setQuestionText, setQuestionNumber, setTranscript]);
+
+  // ── Live backend wiring (no-op unless NEXT_PUBLIC_API_BASE_URL is set) ──
+  const tutor = useDemoTutor();
+  const { submitVoiceTurn, start: startSession, apiEnabled, sessionId } = tutor;
+  const onTurnEnd = useCallback(
+    (transcript: string, confidence?: number) => {
+      void submitVoiceTurn(
+        transcript,
+        {
+          concept_id: currentTopicId,
+          question_id: `${currentTopicId}_LESSON`,
+          current_phase: 'GUIDED_PRACTICE',
+          hint_count: 0,
+        },
+        confidence
+      );
+    },
+    [submitVoiceTurn, currentTopicId]
+  );
+  const voice = useVoiceTurn({ onTurnEnd });
+
+  // Start a backend session on lesson entry; mic starts muted so capture is
+  // opt-in (tap the mic to talk — no surprise permission prompt on load).
+  useEffect(() => {
+    if (!hydrated || !apiEnabled || sessionId) return;
+    setMicMuted(true);
+    void startSession(currentTopicId, 'VOICE');
+  }, [hydrated, apiEnabled, sessionId, currentTopicId, startSession, setMicMuted]);
+
+  // Mic button drives real voice capture: unmuted → listen + fire turns on
+  // silence; muted → stop.
+  useEffect(() => {
+    if (!apiEnabled || !sessionId || !voice.supported) return;
+    if (!micMuted) void voice.start();
+    else voice.stop();
+  }, [apiEnabled, sessionId, micMuted, voice]);
 
   return (
     <>

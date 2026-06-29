@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useNumeraStore } from '@/store/useNumeraStore';
+import { useDemoTutor } from '@/hooks/useDemoTutor';
 import { demoFor } from '@/lib/demoContent';
 import BarModel from './BarModel';
 import Toolbar from './Toolbar';
@@ -34,6 +35,7 @@ const HELP_TIPS = [
 export default function CanvasStage() {
   const { questionText, questionNumber, items, currentTopicId, setActiveTool, setCanvasExporter } = useNumeraStore();
   const showBarModel = demoFor(currentTopicId).showBarModel;
+  const tutor = useDemoTutor();
 
   const exportRef = useRef<(() => string | null) | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -57,15 +59,21 @@ export default function CanvasStage() {
 
   const handleCheckWork = useCallback(() => {
     const png = exportRef.current?.();
-    // Frontend-only: the backend isn't wired, so we acknowledge locally.
-    // In production this PNG goes to sendCanvasSubmission() via useWebSocket.
     if (!png || items.length === 0) {
       showToast('Show your working on the canvas first, then tap Check.');
       return;
     }
-    console.log('[Numera] Canvas submitted, PNG length:', png.length);
-    showToast('Nice work — your working has been submitted.');
-  }, [items.length, showToast]);
+    // Submit for live OCR + tutor feedback when a backend session is active;
+    // otherwise acknowledge locally (mock demo).
+    if (tutor.apiEnabled && tutor.sessionId) {
+      showToast('Reading your working…');
+      void tutor.submitCanvasWork().then((res) => {
+        showToast(res ? res.tutor.tutor_message : 'Submitted — see your session trail.');
+      });
+    } else {
+      showToast('Nice work — your working has been submitted.');
+    }
+  }, [items.length, showToast, tutor]);
 
   return (
     <main
