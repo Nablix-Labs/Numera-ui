@@ -7,6 +7,7 @@ import { exportNotesPDF } from '@/lib/exportNotes';
 import TutorTile from './TutorTile';
 import VoiceBar from './VoiceBar';
 import Transcript from './Transcript';
+import ChatInput from './ChatInput';
 import { cn } from '@/lib/cn';
 
 const stateLabel: Record<string, string> = {
@@ -119,9 +120,14 @@ export default function MediaPanel() {
       {/* Voice controls */}
       <VoiceBar />
 
-      {/* Transcript (optional) */}
+      {/* Transcript (optional) + chat input */}
       {transcriptVisible
-        ? <Transcript />
+        ? (
+          <>
+            <Transcript />
+            <ChatInput />
+          </>
+        )
         : <div className={cn('flex-1 min-h-0')} aria-hidden="true" />}
     </aside>
   );
