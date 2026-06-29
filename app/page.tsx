@@ -16,6 +16,7 @@ import { useFlowNav } from '@/lib/useFlowNav';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import { useDemoTutor } from '@/hooks/useDemoTutor';
 import { useVoiceTurn } from '@/hooks/useVoiceTurn';
+import { DEMO_CONCEPT_ID, DEMO_QUESTION_ID, DEMO_PHASE } from '@/lib/api';
 import { demoFor } from '@/lib/demoContent';
 
 export default function LessonPage() {
@@ -51,15 +52,15 @@ export default function LessonPage() {
       void submitVoiceTurn(
         transcript,
         {
-          concept_id: currentTopicId,
-          question_id: `${currentTopicId}_LESSON`,
-          current_phase: 'GUIDED_PRACTICE',
+          concept_id: DEMO_CONCEPT_ID,
+          question_id: DEMO_QUESTION_ID,
+          current_phase: DEMO_PHASE,
           hint_count: 0,
         },
         confidence
       );
     },
-    [submitVoiceTurn, currentTopicId]
+    [submitVoiceTurn]
   );
   const voice = useVoiceTurn({ onTurnEnd });
 
@@ -68,8 +69,8 @@ export default function LessonPage() {
   useEffect(() => {
     if (!hydrated || !apiEnabled || sessionId) return;
     setMicMuted(true);
-    void startSession(currentTopicId, 'VOICE');
-  }, [hydrated, apiEnabled, sessionId, currentTopicId, startSession, setMicMuted]);
+    void startSession(DEMO_CONCEPT_ID, 'VOICE');
+  }, [hydrated, apiEnabled, sessionId, startSession, setMicMuted]);
 
   // Mic button drives real voice capture: unmuted → listen + fire turns on
   // silence; muted → stop.

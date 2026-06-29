@@ -12,11 +12,11 @@ import { useState, type FormEvent } from 'react';
 import { Send } from 'lucide-react';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import { useDemoTutor } from '@/hooks/useDemoTutor';
+import { DEMO_CONCEPT_ID, DEMO_QUESTION_ID, DEMO_PHASE } from '@/lib/api';
 
 export default function ChatInput() {
   const [text, setText] = useState('');
   const addTranscriptMessage = useNumeraStore((s) => s.addTranscriptMessage);
-  const currentTopicId = useNumeraStore((s) => s.currentTopicId);
   const tutor = useDemoTutor();
 
   const send = (e: FormEvent) => {
@@ -26,9 +26,9 @@ export default function ChatInput() {
     addTranscriptMessage({ role: 'student', text: value });
     setText('');
     void tutor.answer(value, {
-      concept_id: currentTopicId,
-      question_id: `${currentTopicId}_LESSON`,
-      current_phase: 'GUIDED_PRACTICE',
+      concept_id: DEMO_CONCEPT_ID,
+      question_id: DEMO_QUESTION_ID,
+      current_phase: DEMO_PHASE,
       hint_count: 0,
     });
   };

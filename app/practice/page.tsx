@@ -14,6 +14,7 @@ import { useNumeraStore } from '@/store/useNumeraStore';
 import { useFlowNav } from '@/lib/useFlowNav';
 import { useDemoTutor } from '@/hooks/useDemoTutor';
 import { useVoiceTurn } from '@/hooks/useVoiceTurn';
+import { DEMO_CONCEPT_ID, DEMO_QUESTION_ID, DEMO_PHASE } from '@/lib/api';
 import { demoFor } from '@/lib/demoContent';
 import PhaseGate from '@/components/PhaseGate';
 import Toolbar from '@/components/Canvas/Toolbar';
@@ -38,10 +39,9 @@ export default function PracticePage() {
   const QUESTION = demo.practiceQuestion;
   const HINTS = demo.practiceHints;
 
-  // Backend context for this practice problem. concept_id is the topic; the
-  // question_id just needs to be a stable non-empty identifier for the demo.
-  const PHASE = 'GUIDED_PRACTICE';
-  const QUESTION_ID = `${currentTopicId}_PRACTICE`;
+  // Backend context — fixed demo identifiers, matching the API documentation.
+  const PHASE = DEMO_PHASE;
+  const QUESTION_ID = DEMO_QUESTION_ID;
 
   // Hands-free voice: on turn-end, fire the transcript + canvas to the backend.
   const { submitVoiceTurn } = tutor;
@@ -49,11 +49,11 @@ export default function PracticePage() {
     (transcript: string, confidence?: number) => {
       void submitVoiceTurn(
         transcript,
-        { concept_id: currentTopicId, question_id: QUESTION_ID, current_phase: PHASE, hint_count: 0 },
+        { concept_id: DEMO_CONCEPT_ID, question_id: QUESTION_ID, current_phase: PHASE, hint_count: 0 },
         confidence
       );
     },
-    [submitVoiceTurn, currentTopicId, QUESTION_ID]
+    [submitVoiceTurn, QUESTION_ID, PHASE]
   );
   const voice = useVoiceTurn({ onTurnEnd });
 
@@ -72,7 +72,7 @@ export default function PracticePage() {
   // Start a backend session once on entry (no-op unless an API base URL is set).
   useEffect(() => {
     if (tutor.apiEnabled && !tutor.sessionId) {
-      void tutor.start(currentTopicId, 'TEXT');
+      void tutor.start(DEMO_CONCEPT_ID, 'TEXT');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -88,7 +88,7 @@ export default function PracticePage() {
   const requestHint = () => {
     setMode('hint');
     void tutor.hint({
-      concept_id: currentTopicId,
+      concept_id: DEMO_CONCEPT_ID,
       question_id: QUESTION_ID,
       current_phase: PHASE,
       current_hint_count: hintIndex,
