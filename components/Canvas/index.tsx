@@ -5,7 +5,6 @@
  *
  * Layout (matches wireframe):
  *   • Question pinned top-left
- *   • Bar model visual centred (backend-controlled in production)
  *   • react-konva drawing surface fills the canvas area
  *   • Floating pill toolbar at bottom-centre
  *   • Pen FAB bottom-left, Help FAB bottom-right
@@ -15,8 +14,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import { useDemoTutor } from '@/hooks/useDemoTutor';
-import { demoFor } from '@/lib/demoContent';
-import BarModel from './BarModel';
 import Toolbar from './Toolbar';
 import TeachBack from './TeachBack';
 
@@ -33,8 +30,7 @@ const HELP_TIPS = [
 ];
 
 export default function CanvasStage() {
-  const { questionText, questionNumber, items, currentTopicId, setActiveTool, setCanvasExporter } = useNumeraStore();
-  const showBarModel = demoFor(currentTopicId).showBarModel;
+  const { questionText, questionNumber, items, setActiveTool, setCanvasExporter } = useNumeraStore();
   const tutor = useDemoTutor();
 
   const exportRef = useRef<(() => string | null) | null>(null);
@@ -97,14 +93,7 @@ export default function CanvasStage() {
         </div>
       </div>
 
-      {/* Bar model visual (sits behind drawing layer) — algebra only */}
-      {showBarModel && (
-        <div className="absolute inset-0 pointer-events-none z-0">
-          <BarModel />
-        </div>
-      )}
-
-      {/* Drawing canvas (fills entire stage, above visuals) */}
+      {/* Drawing canvas (fills entire stage) */}
       <div className="absolute inset-0 z-[1]">
         <DrawingCanvas onExportReady={handleExportReady} />
       </div>
