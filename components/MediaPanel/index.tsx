@@ -93,7 +93,9 @@ export default function MediaPanel() {
 
   return (
     <aside
-      className="flex flex-col flex-shrink-0 border-r border-[#c8c8c8] min-h-0"
+      // pb clears the fixed Demo Director bar (FlowControls) so the chat input
+      // at the bottom isn't hidden behind it.
+      className="flex flex-col flex-shrink-0 border-r border-[#c8c8c8] min-h-0 pb-12"
       style={{ width: 234 }}
       aria-label="Tutor and student panel"
     >
