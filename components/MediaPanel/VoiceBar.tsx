@@ -2,6 +2,7 @@
 
 import { useNumeraStore } from '@/store/useNumeraStore';
 import { useMicLevel, MIC_BARS } from '@/store/useMicLevel';
+import { useAuthStore, isConsentActive } from '@/store/useAuthStore';
 import { cn } from '@/lib/cn';
 
 export default function VoiceBar() {
@@ -9,6 +10,10 @@ export default function VoiceBar() {
   const levels = useMicLevel((s) => s.levels);
   const active = useMicLevel((s) => s.active);
   const caption = useMicLevel((s) => s.caption);
+  const consents = useAuthStore((s) => s.consents);
+
+  // Voice is a consented feature (§10): only available with voice_processing consent.
+  const voiceAllowed = isConsentActive(consents, 'voice_processing');
 
   // The bar is "live" (reacting to real input) only while capturing + unmuted.
   const live = active && !micMuted;
@@ -19,9 +24,20 @@ export default function VoiceBar() {
       <p className="text-[11.5px] text-slate-blue text-center">
         Status:{' '}
         <strong className="text-ink">
-          {micMuted ? 'Muted' : voiceStatus === 'listening' ? 'Listening…' : voiceStatus === 'speaking' ? 'Speaking…' : voiceStatus === 'processing' ? 'Processing…' : 'Idle'}
+          {!voiceAllowed ? 'Unavailable' : micMuted ? 'Muted' : voiceStatus === 'listening' ? 'Listening…' : voiceStatus === 'speaking' ? 'Speaking…' : voiceStatus === 'processing' ? 'Processing…' : 'Idle'}
         </strong>
       </p>
+
+      {!voiceAllowed ? (
+        /* §14: voice consent missing */
+        <div className="rounded-md bg-reading-surface border border-muted-gray px-3 py-2.5 text-center">
+          <p className="text-[11.5px] text-ink font-medium">Voice mode is not available</p>
+          <p className="text-[11px] text-slate-blue mt-0.5 leading-snug">
+            Voice consent is required. You can continue with text below.
+          </p>
+        </div>
+      ) : (
+      <>
 
       {/* Live input level — reflects how much mic signal is being detected */}
       <div className="flex items-center justify-center gap-[3px] h-[26px]" aria-hidden="true">
@@ -88,6 +104,8 @@ export default function VoiceBar() {
         )}
         <span>{micMuted ? 'Muted — tap to unmute' : 'Tap to mute'}</span>
       </button>
+      </>
+      )}
     </div>
   );
 }

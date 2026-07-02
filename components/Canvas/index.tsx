@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useNumeraStore } from '@/store/useNumeraStore';
+import { useAuthStore, isConsentActive } from '@/store/useAuthStore';
 import { useDemoTutor } from '@/hooks/useDemoTutor';
 import { gridBackground, GRID_OPTIONS } from '@/lib/canvasGrid';
 import Toolbar from './Toolbar';
@@ -32,6 +33,8 @@ const HELP_TIPS = [
 
 export default function CanvasStage() {
   const { questionText, questionNumber, items, setActiveTool, setCanvasExporter, canvasGrid, setCanvasGrid } = useNumeraStore();
+  const canvasConsents = useAuthStore((s) => s.consents);
+  const canvasAllowed = isConsentActive(canvasConsents, 'canvas_processing');
   const tutor = useDemoTutor();
 
   const exportRef = useRef<(() => string | null) | null>(null);
@@ -56,6 +59,10 @@ export default function CanvasStage() {
   }, []);
 
   const handleCheckWork = useCallback(() => {
+    if (!canvasAllowed) {
+      showToast('Canvas processing is not available until the required consent is completed.');
+      return;
+    }
     const png = exportRef.current?.();
     if (!png || items.length === 0) {
       showToast('Show your working on the canvas first, then tap Check.');
@@ -71,7 +78,7 @@ export default function CanvasStage() {
     } else {
       showToast('Nice work — your working has been submitted.');
     }
-  }, [items.length, showToast, tutor]);
+  }, [canvasAllowed, items.length, showToast, tutor]);
 
   return (
     <main
@@ -90,6 +97,13 @@ export default function CanvasStage() {
           <span className="font-[Cambria_Math,Georgia,serif]">{questionText}</span>
         </div>
       </div>
+
+      {/* §14: canvas consent missing */}
+      {!canvasAllowed && (
+        <div className="absolute top-[70px] left-[34px] right-[34px] z-10 rounded-md bg-action-orange/10 border border-action-orange/30 px-3.5 py-2 text-[12px] text-ink">
+          Canvas processing is not available until the required consent is completed.
+        </div>
+      )}
 
       {/* Drawing canvas (fills entire stage) */}
       <div className="absolute inset-0 z-[1]">
