@@ -19,6 +19,7 @@ import { Stage, Layer, Line, Rect, Ellipse, Group, Text } from 'react-konva';
 import type Konva from 'konva';
 import { useNumeraStore, type DrawnItem } from '@/store/useNumeraStore';
 import TutorLayer from './TutorLayer';
+import TutorMathOverlay from './TutorMathOverlay';
 
 interface DrawingCanvasProps {
   onExportReady?: (exportFn: () => string | null) => void;
@@ -245,7 +246,7 @@ export default function DrawingCanvas({ onExportReady }: DrawingCanvasProps) {
     : 'copy';
 
   return (
-    <div ref={containerRef} className="w-full h-full" aria-label="Drawing canvas">
+    <div ref={containerRef} className="w-full h-full relative" aria-label="Drawing canvas">
       <Stage
         ref={stageRef}
         width={containerSize.width}
@@ -266,6 +267,8 @@ export default function DrawingCanvas({ onExportReady }: DrawingCanvasProps) {
         {/* AI-tutor marks — separate, non-erasable layer above the student's */}
         <TutorLayer width={containerSize.width} height={containerSize.height} />
       </Stage>
+      {/* Tutor maths as real KaTeX, overlaid on the same coordinate space */}
+      <TutorMathOverlay width={containerSize.width} height={containerSize.height} />
     </div>
   );
 }

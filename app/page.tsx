@@ -16,6 +16,7 @@ import { useFlowNav } from '@/lib/useFlowNav';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import { useDemoTutor } from '@/hooks/useDemoTutor';
 import { useVoiceTurn } from '@/hooks/useVoiceTurn';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import { DEMO_CONCEPT_ID, DEMO_QUESTION_ID, DEMO_PHASE } from '@/lib/api';
 import { demoFor } from '@/lib/demoContent';
 
@@ -24,12 +25,17 @@ export default function LessonPage() {
   const setQuestionText = useNumeraStore((s) => s.setQuestionText);
   const setQuestionNumber = useNumeraStore((s) => s.setQuestionNumber);
   const setTranscript = useNumeraStore((s) => s.setTranscript);
+  const clearTutorMarks = useNumeraStore((s) => s.clearTutorMarks);
   const micMuted = useNumeraStore((s) => s.micMuted);
   const setMicMuted = useNumeraStore((s) => s.setMicMuted);
 
   // ── Live backend wiring (no-op unless NEXT_PUBLIC_API_BASE_URL is set) ──
   const tutor = useDemoTutor();
   const { submitVoiceTurn, start: startSession, apiEnabled, sessionId } = tutor;
+
+  // Real-time channel for tutor canvas_draw (+ transcript/state). No-ops unless
+  // NEXT_PUBLIC_WS_URL is set, so it's safe to mount before the WS backend exists.
+  useWebSocket(sessionId ?? null);
 
   // Wait for the persisted store to rehydrate before writing lesson content —
   // writing earlier would persist default state over the saved placement.
@@ -47,7 +53,8 @@ export default function LessonPage() {
     setQuestionText(demo.lessonQuestion);
     setQuestionNumber(demo.questionNumber);
     setTranscript(demo.transcript);
-  }, [hydrated, apiEnabled, currentTopicId, setQuestionText, setQuestionNumber, setTranscript]);
+    clearTutorMarks(); // a new question starts with a clean tutor layer
+  }, [hydrated, apiEnabled, currentTopicId, setQuestionText, setQuestionNumber, setTranscript, clearTutorMarks]);
 
   const onTurnEnd = useCallback(
     (transcript: string, confidence?: number) => {
@@ -77,8 +84,9 @@ export default function LessonPage() {
       setQuestionText(rec.current_question.replace(/^solve for\s*x\s*:?\s*/i, '').trim());
       setQuestionNumber(rec.question_number);
       setTranscript([{ role: 'ai', text: rec.message }]);
+      clearTutorMarks();
     });
-  }, [hydrated, apiEnabled, sessionId, startSession, setMicMuted, setQuestionText, setQuestionNumber, setTranscript]);
+  }, [hydrated, apiEnabled, sessionId, startSession, setMicMuted, setQuestionText, setQuestionNumber, setTranscript, clearTutorMarks]);
 
   // Mic button drives real voice capture: unmuted → listen + fire turns on
   // silence; muted → stop.

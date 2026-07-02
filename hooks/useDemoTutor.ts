@@ -121,6 +121,7 @@ export function useDemoTutor() {
         });
         addTranscriptMessage({ role: 'ai', text: res.message });
         addTrailEntry({ kind: 'tutor', text: res.message });
+        if (res.canvas_draw) useNumeraStore.getState().applyCanvasDraw(res.canvas_draw);
         return res;
       } catch (err) {
         addTrailEntry({ kind: 'tutor', text: errorMessage(err, 'Tutor unavailable.') });
@@ -153,6 +154,7 @@ export function useDemoTutor() {
         text: res.tutor.tutor_message,
         meta: res.tutor.evaluation,
       });
+      if (res.canvas_draw) useNumeraStore.getState().applyCanvasDraw(res.canvas_draw);
       return res;
     } catch (err) {
       addTrailEntry({ kind: 'tutor', text: errorMessage(err, 'Could not read the canvas.') });
@@ -248,6 +250,7 @@ export function useDemoTutor() {
         console.groupEnd();
         addTranscriptMessage({ role: 'ai', text: res.message });
         addTrailEntry({ kind: 'tutor', text: res.message });
+        if (res.canvas_draw) useNumeraStore.getState().applyCanvasDraw(res.canvas_draw);
         speak(res.message_voice || res.message);
         return res;
       } catch (err) {

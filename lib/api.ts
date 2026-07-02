@@ -12,6 +12,7 @@
  *    `session_id` from /session/start and reuse it for the whole run.
  */
 import axios from 'axios';
+import type { CanvasDrawPayload } from '@/store/useNumeraStore';
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
 
@@ -159,6 +160,8 @@ export interface InteractionResponse {
   message_voice: string;
   hint_count: number;
   phase_indicator: string;
+  /** Optional tutor drawing to render on the canvas alongside this reply. */
+  canvas_draw?: CanvasDrawPayload;
 }
 
 /** POST /interaction — core tutoring call. Requires a started, owned session. */
@@ -229,6 +232,8 @@ export interface CanvasSubmissionResult {
   ocr: OcrResult;
   tutor: TutorResult;
   latency: CanvasLatency;
+  /** Optional tutor drawing (e.g. mark up the student's working). */
+  canvas_draw?: CanvasDrawPayload;
 }
 
 const PNG_DATA_URL_PREFIX = 'data:image/png;base64,';

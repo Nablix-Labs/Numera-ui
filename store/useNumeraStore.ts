@@ -71,6 +71,11 @@ export interface CanvasDrawPayload {
   elements: Array<Omit<TutorElement, 'id'> & { id?: string }>;
 }
 
+// Idempotency for tutor draw commands: a command may be re-delivered (e.g. on a
+// WebSocket reconnect). We drop any actionId we've already applied. Module-level
+// (not React state) since it's plumbing, not UI.
+const seenDrawActionIds = new Set<string>();
+
 export interface TranscriptMessage {
   id: string;
   role: 'ai' | 'student';
@@ -465,6 +470,13 @@ export const useNumeraStore = create<NumeraState>()(
 
   applyCanvasDraw: (payload) =>
     set((s) => {
+      // A new "replace" resets the layer and the idempotency window.
+      if (payload.mode === 'replace') seenDrawActionIds.clear();
+      // Drop a duplicate command (re-delivered on reconnect).
+      if (payload.actionId) {
+        if (seenDrawActionIds.has(payload.actionId)) return {};
+        seenDrawActionIds.add(payload.actionId);
+      }
       const incoming: TutorElement[] = payload.elements.map((el) => ({
         ...el,
         id: el.id ?? crypto.randomUUID(),
@@ -475,7 +487,10 @@ export const useNumeraStore = create<NumeraState>()(
       };
     }),
 
-  clearTutorMarks: () => set({ tutorElements: [] }),
+  clearTutorMarks: () => {
+    seenDrawActionIds.clear();
+    set({ tutorElements: [] });
+  },
 
   setInputMode: (inputMode) => set({ inputMode }),
   setTextInput: (textInput) => set({ textInput }),
