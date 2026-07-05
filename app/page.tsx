@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import SlideDots from '@/components/SlideDots';
 import CanvasStage from '@/components/Canvas';
 import ContinuityCheck from '@/components/ContinuityCheck';
@@ -21,6 +22,10 @@ import { useVoiceTurn } from '@/hooks/useVoiceTurn';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { DEMO_PHASE } from '@/lib/api';
 import { demoFor } from '@/lib/demoContent';
+
+// Real refraction glass (liquid-glass-react) — browser-only shader, so it's
+// loaded client-side to keep the static export happy.
+const LiquidGlass = dynamic(() => import('liquid-glass-react'), { ssr: false });
 
 export default function LessonPage() {
   const { goStage, currentTopicId } = useFlowNav();
@@ -109,13 +114,24 @@ export default function LessonPage() {
       <ContinuityCheck />
       <FloatingMicButton />
       <VisualCue />
-      {/* Guided lesson → independent practice for this topic */}
-      <button
-        onClick={() => goStage('practice', currentTopicId)}
-        className="lg-glass-dark fixed top-4 right-4 z-40 rounded-full text-white px-4 py-2 text-[12px] font-semibold hover:opacity-90 transition-opacity"
-      >
-        Finish lesson → Practice
-      </button>
+      {/* Guided lesson → independent practice — real liquid-glass (refracts the
+          canvas grid behind it, reacts to the cursor). */}
+      <div className="fixed top-4 right-4 z-40">
+        <LiquidGlass
+          cornerRadius={100}
+          padding="9px 18px"
+          displacementScale={62}
+          blurAmount={0.06}
+          saturation={135}
+          aberrationIntensity={2}
+          elasticity={0.28}
+          mode="standard"
+          onClick={() => goStage('practice', currentTopicId)}
+          className="cursor-pointer"
+        >
+          <span className="text-ink text-[12px] font-semibold whitespace-nowrap">Finish lesson → Practice</span>
+        </LiquidGlass>
+      </div>
     </>
   );
 }

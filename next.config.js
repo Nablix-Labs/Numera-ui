@@ -33,6 +33,11 @@ const nextConfig = {
   webpack: (config) => {
     // Enable WebAssembly (not required now but future-proof)
     config.experiments = { ...config.experiments, asyncWebAssembly: true };
+    // konva's node build references the optional native `canvas` package, which
+    // isn't installed (and isn't needed in the browser). Alias it off so the
+    // client bundle resolves. (react-konva 19 pulls konva's node index.)
+    config.resolve = config.resolve || {};
+    config.resolve.alias = { ...(config.resolve.alias || {}), canvas: false };
     return config;
   },
 };
