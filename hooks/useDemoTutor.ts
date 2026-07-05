@@ -201,6 +201,11 @@ export function useDemoTutor() {
     ): Promise<InteractionResponse | null> => {
       if (!apiEnabled() || !sessionId || !transcript.trim()) return null;
       addTrailEntry({ kind: 'answer', text: transcript });
+      // Show the student's complete spoken turn in the chat. The live caption is
+      // ephemeral (cleared on commit), so without this the words the student
+      // said — including the trailing 1–2 recovered by the commit-time caption
+      // fallback in useVoiceTurn — never appear in the visible transcript.
+      addTranscriptMessage({ role: 'student', text: transcript });
 
       // Console trace for backend integration debugging — shows the exact
       // payloads/responses the frontend exchanges on a voice turn.
@@ -251,7 +256,11 @@ export function useDemoTutor() {
         addTranscriptMessage({ role: 'ai', text: res.message });
         addTrailEntry({ kind: 'tutor', text: res.message });
         if (res.canvas_draw) useNumeraStore.getState().applyCanvasDraw(res.canvas_draw);
-        speak(res.message_voice || res.message);
+        // Speak exactly what's shown in the chat. The backend's message_voice can
+        // carry the same meaning in different words ("we are close" vs "you're
+        // almost there"), which is confusing when read + heard together — so the
+        // spoken audio must match the on-screen text verbatim.
+        speak(res.message);
         return res;
       } catch (err) {
         console.warn('✗ /interaction failed:', err);

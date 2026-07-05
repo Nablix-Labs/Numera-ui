@@ -6,6 +6,10 @@
 const isPages = process.env.GITHUB_PAGES === 'true';
 const repo = 'Numera-ui';
 
+// Static export for a self-hosted deploy under a subpath (e.g. nginx on the VM
+// serving the SPA at http://<host>/app/). Set EXPORT_BASE_PATH="/app" at build.
+const exportBasePath = process.env.EXPORT_BASE_PATH;
+
 const nextConfig = {
   ...(isPages
     ? {
@@ -13,6 +17,13 @@ const nextConfig = {
         basePath: `/${repo}`,
         assetPrefix: `/${repo}/`,
         // Emit dir/index.html so deep links work with or without a trailing slash
+        trailingSlash: true,
+      }
+    : exportBasePath
+    ? {
+        output: 'export',
+        basePath: exportBasePath,
+        assetPrefix: `${exportBasePath}/`,
         trailingSlash: true,
       }
     : {}),

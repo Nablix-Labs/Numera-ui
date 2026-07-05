@@ -32,7 +32,7 @@ const HELP_TIPS = [
 ];
 
 export default function CanvasStage() {
-  const { questionText, questionNumber, items, setActiveTool, setCanvasExporter, canvasGrid, setCanvasGrid } = useNumeraStore();
+  const { questionText, questionNumber, items, setCanvasExporter, canvasGrid, setCanvasGrid } = useNumeraStore();
   const canvasConsents = useAuthStore((s) => s.consents);
   const canvasAllowed = isConsentActive(canvasConsents, 'canvas_processing');
   const tutor = useDemoTutor();
@@ -127,19 +127,6 @@ export default function CanvasStage() {
           {toast}
         </div>
       )}
-
-      {/* Corner FABs */}
-      <button
-        onClick={() => setActiveTool('pen')}
-        title="Pen"
-        aria-label="Switch to pen"
-        className="absolute bottom-[22px] left-6 w-12 h-12 rounded-full bg-focus-navy text-white flex items-center justify-center z-20"
-        style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.22)' }}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 19 l1 -4 l9 -9 l3 3 l-9 9 l-4 1 z"/><line x1="13.5" y1="6.5" x2="16.5" y2="9.5"/>
-        </svg>
-      </button>
 
       {/* Paper-style + Help FABs */}
       <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2.5">
@@ -239,12 +226,10 @@ export default function CanvasStage() {
   );
 }
 
-/** Corner FAB styling — dark when open, muted when closed. */
+/** Corner FAB styling — dark glass when open, light glass when closed. */
 function cnFab(open: boolean) {
   return [
-    'w-10 h-10 rounded-full flex items-center justify-center transition-colors border',
-    open
-      ? 'bg-focus-navy text-white border-focus-navy'
-      : 'bg-reading-surface text-slate-blue border-muted-gray hover:bg-muted-gray hover:text-ink',
+    'w-10 h-10 rounded-full flex items-center justify-center transition-colors',
+    open ? 'lg-glass-dark text-white' : 'lg-glass text-slate-blue hover:text-ink',
   ].join(' ');
 }

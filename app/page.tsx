@@ -12,12 +12,14 @@ import { useCallback, useEffect, useState } from 'react';
 import SlideDots from '@/components/SlideDots';
 import CanvasStage from '@/components/Canvas';
 import ContinuityCheck from '@/components/ContinuityCheck';
+import FloatingMicButton from '@/components/FloatingMicButton';
+import VisualCue from '@/components/VisualCue';
 import { useFlowNav } from '@/lib/useFlowNav';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import { useDemoTutor } from '@/hooks/useDemoTutor';
 import { useVoiceTurn } from '@/hooks/useVoiceTurn';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { DEMO_CONCEPT_ID, DEMO_QUESTION_ID, DEMO_PHASE } from '@/lib/api';
+import { DEMO_PHASE } from '@/lib/api';
 import { demoFor } from '@/lib/demoContent';
 
 export default function LessonPage() {
@@ -28,6 +30,8 @@ export default function LessonPage() {
   const clearTutorMarks = useNumeraStore((s) => s.clearTutorMarks);
   const micMuted = useNumeraStore((s) => s.micMuted);
   const setMicMuted = useNumeraStore((s) => s.setMicMuted);
+  const activeConceptId = useNumeraStore((s) => s.activeConceptId);
+  const activeQuestionId = useNumeraStore((s) => s.activeQuestionId);
 
   // ── Live backend wiring (no-op unless NEXT_PUBLIC_API_BASE_URL is set) ──
   const tutor = useDemoTutor();
@@ -61,15 +65,15 @@ export default function LessonPage() {
       void submitVoiceTurn(
         transcript,
         {
-          concept_id: DEMO_CONCEPT_ID,
-          question_id: DEMO_QUESTION_ID,
+          concept_id: activeConceptId,
+          question_id: activeQuestionId,
           current_phase: DEMO_PHASE,
           hint_count: 0,
         },
         confidence
       );
     },
-    [submitVoiceTurn]
+    [submitVoiceTurn, activeConceptId, activeQuestionId]
   );
   const voice = useVoiceTurn({ onTurnEnd });
 
@@ -78,15 +82,17 @@ export default function LessonPage() {
   useEffect(() => {
     if (!hydrated || !apiEnabled || sessionId) return;
     setMicMuted(true);
-    void startSession(DEMO_CONCEPT_ID, 'VOICE').then((rec) => {
+    void startSession(activeConceptId, 'VOICE').then((rec) => {
       if (!rec) return;
       // CanvasStage renders the "Solve for x:" prefix itself, so strip it.
       setQuestionText(rec.current_question.replace(/^solve for\s*x\s*:?\s*/i, '').trim());
       setQuestionNumber(rec.question_number);
       setTranscript([{ role: 'ai', text: rec.message }]);
       clearTutorMarks();
+      // Backend decides whether a supporting picture should be shown.
+      useNumeraStore.getState().setVisualCueVisible(rec.show_visual_cue);
     });
-  }, [hydrated, apiEnabled, sessionId, startSession, setMicMuted, setQuestionText, setQuestionNumber, setTranscript, clearTutorMarks]);
+  }, [hydrated, apiEnabled, sessionId, activeConceptId, startSession, setMicMuted, setQuestionText, setQuestionNumber, setTranscript, clearTutorMarks]);
 
   // Mic button drives real voice capture: unmuted → listen + fire turns on
   // silence; muted → stop.
@@ -101,10 +107,12 @@ export default function LessonPage() {
       <SlideDots />
       <CanvasStage />
       <ContinuityCheck />
+      <FloatingMicButton />
+      <VisualCue />
       {/* Guided lesson → independent practice for this topic */}
       <button
         onClick={() => goStage('practice', currentTopicId)}
-        className="fixed top-4 right-4 z-40 rounded-md bg-focus-navy text-white px-4 py-2 text-[12px] font-semibold hover:opacity-80 transition-opacity"
+        className="lg-glass-dark fixed top-4 right-4 z-40 rounded-full text-white px-4 py-2 text-[12px] font-semibold hover:opacity-90 transition-opacity"
       >
         Finish lesson → Practice
       </button>
