@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:selfhost": "NEXT_PUBLIC_API_BASE_URL=/api EXPORT_BASE_PATH=/app next build",
     "start": "next start",
     "lint": "next lint"
   },
