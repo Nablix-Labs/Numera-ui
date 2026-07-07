@@ -11,6 +11,7 @@ import type { LearningPhase } from '@/lib/phases';
 import type { FlowStage } from '@/lib/flow';
 import { TOPICS } from '@/lib/topics';
 import { DEMO_CONCEPT_ID, DEMO_QUESTION_ID } from '@/lib/api';
+import { uid } from '@/lib/uid';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -427,7 +428,7 @@ export const useNumeraStore = create<NumeraState>()(
     set((s) => ({
       transcript: [
         ...s.transcript,
-        { ...msg, id: crypto.randomUUID(), timestamp: Date.now() },
+        { ...msg, id: uid(), timestamp: Date.now() },
       ],
     })),
 
@@ -456,7 +457,7 @@ export const useNumeraStore = create<NumeraState>()(
         transcript: [
           ...s.transcript,
           {
-            id: crypto.randomUUID(),
+            id: uid(),
             role: 'student',
             text,
             partial: true,
@@ -470,7 +471,7 @@ export const useNumeraStore = create<NumeraState>()(
     set((s) => ({
       interactionTrail: [
         ...s.interactionTrail,
-        { ...entry, id: crypto.randomUUID(), timestamp: Date.now() },
+        { ...entry, id: uid(), timestamp: Date.now() },
       ],
     })),
 
@@ -515,7 +516,7 @@ export const useNumeraStore = create<NumeraState>()(
       }
       const incoming: TutorElement[] = payload.elements.map((el) => ({
         ...el,
-        id: el.id ?? crypto.randomUUID(),
+        id: el.id ?? uid(),
       }));
       return {
         tutorElements:
@@ -614,7 +615,7 @@ export const useNumeraStore = create<NumeraState>()(
     set((s) => ({
       commentary: [
         ...s.commentary,
-        { ...c, id: crypto.randomUUID(), timestamp: Date.now() },
+        { ...c, id: uid(), timestamp: Date.now() },
       ].slice(-8), // keep the feed short
     })),
   setSpotlight: (spotlight) => set({ spotlight }),

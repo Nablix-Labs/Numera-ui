@@ -18,6 +18,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import { Stage, Layer, Line, Rect, Ellipse, Group, Text } from 'react-konva';
 import type Konva from 'konva';
 import { useNumeraStore, type DrawnItem } from '@/store/useNumeraStore';
+import { uid } from '@/lib/uid';
 import TutorLayer from './TutorLayer';
 import TutorMathOverlay from './TutorMathOverlay';
 
@@ -77,7 +78,7 @@ export default function DrawingCanvas({ onExportReady }: DrawingCanvasProps) {
       if (!pos) return;
       isDrawing.current = true;
       startPos.current = { x: pos.x, y: pos.y };
-      const id = crypto.randomUUID();
+      const id = uid();
 
       if (activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'highlighter' || activeTool === 'eraser') {
         const isEraser = activeTool === 'eraser';
