@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Pen, Pencil, Highlighter, Eraser, Ruler, Square, Circle, Triangle,
-  Undo2, Redo2, CheckCircle2, Trash2, MousePointerClick, Brush,
+  Undo2, Redo2, CheckCircle2, Trash2, MousePointerClick, Brush, Sparkles,
 } from 'lucide-react';
 import { useNumeraStore, type ShapeKind, type EraserMode } from '@/store/useNumeraStore';
 import { cn } from '@/lib/cn';
@@ -28,7 +28,7 @@ export default function Toolbar({ onCheckWork }: ToolbarProps) {
   const {
     activeTool, shapeKind, eraserMode, strokeColor, strokeWidth, items, undone,
     setActiveTool, setShapeKind, setEraserMode, setStrokeColor, setStrokeWidth,
-    undo, redo, clearCanvas,
+    undo, redo, clearCanvas, clearTutorMarks,
     toolbarPos, setToolbarPos, toolbarCollapsed, toggleToolbarCollapsed,
     toolbarOrientation, setToolbarOrientation,
   } = useNumeraStore();
@@ -190,7 +190,8 @@ export default function Toolbar({ onCheckWork }: ToolbarProps) {
                   <MenuItem active={eraserMode === 'stroke'} icon={<Brush size={15} strokeWidth={1.7} />} label="Erase (rub)" onClick={() => { setEraserMode('stroke'); setMenu(null); }} />
                   <MenuItem active={eraserMode === 'object'} icon={<MousePointerClick size={15} strokeWidth={1.7} />} label="Delete object" onClick={() => { setEraserMode('object'); setMenu(null); }} />
                   <div className="h-[1px] bg-muted-gray my-1" />
-                  <MenuItem icon={<Trash2 size={15} strokeWidth={1.7} />} label="Clear all" onClick={() => { clearCanvas(); setMenu(null); }} />
+                  <MenuItem icon={<Trash2 size={15} strokeWidth={1.7} />} label="Clear my writing" onClick={() => { clearCanvas(); setMenu(null); }} />
+                  <MenuItem icon={<Sparkles size={15} strokeWidth={1.7} />} label="Clear tutor writing" onClick={() => { clearTutorMarks(); setMenu(null); }} />
                 </Popover>
               )}
             </div>
