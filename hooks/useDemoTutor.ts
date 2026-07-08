@@ -26,7 +26,7 @@ import {
   type HintResponse,
 } from '@/lib/api';
 import { useNumeraStore } from '@/store/useNumeraStore';
-import { useMicLevel } from '@/store/useMicLevel';
+import { speakTutor } from '@/lib/tts';
 
 const apiEnabled = () => Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
 
@@ -37,22 +37,6 @@ const apiEnabled = () => Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
  */
 function hasCanvasActivity(): boolean {
   return useNumeraStore.getState().items.length > 0;
-}
-
-/** Speak the tutor's reply (TTS output only — never used to decide content).
- *  Drives the 3D avatar's mouth via useMicLevel: onstart/onboundary open it in
- *  sync with the spoken words, onend/onerror close it. */
-function speak(text: string): void {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window) || !text) return;
-  const mic = useMicLevel.getState();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.onstart = () => useMicLevel.getState().setAiSpeaking(true);
-  utterance.onboundary = () => useMicLevel.getState().markBoundary();
-  utterance.onend = () => useMicLevel.getState().setAiSpeaking(false);
-  utterance.onerror = () => useMicLevel.getState().setAiSpeaking(false);
-  window.speechSynthesis.cancel();
-  mic.setAiSpeaking(false); // reset before the new utterance starts
-  window.speechSynthesis.speak(utterance);
 }
 
 /** Pull a human-readable message out of a normalised API error, if present. */
@@ -122,7 +106,7 @@ export function useDemoTutor() {
         addTranscriptMessage({ role: 'ai', text: res.message });
         addTrailEntry({ kind: 'tutor', text: res.message });
         if (res.canvas_draw) useNumeraStore.getState().applyCanvasDraw(res.canvas_draw);
-        speak(res.message); // voice the reply — same verbatim text shown in chat
+        speakTutor(res.message); // voice the reply — same verbatim text shown in chat
         return res;
       } catch (err) {
         addTrailEntry({ kind: 'tutor', text: errorMessage(err, 'Tutor unavailable.') });
@@ -156,7 +140,7 @@ export function useDemoTutor() {
         meta: res.tutor.evaluation,
       });
       if (res.canvas_draw) useNumeraStore.getState().applyCanvasDraw(res.canvas_draw);
-      speak(res.tutor.tutor_message); // voice the reply — same verbatim text shown in chat
+      speakTutor(res.tutor.tutor_message); // voice the reply — same verbatim text shown in chat
       return res;
     } catch (err) {
       addTrailEntry({ kind: 'tutor', text: errorMessage(err, 'Could not read the canvas.') });
@@ -181,7 +165,7 @@ export function useDemoTutor() {
         });
         addTranscriptMessage({ role: 'ai', text: res.hint });
         addTrailEntry({ kind: 'hint', text: res.hint, meta: `Hint ${res.hint_level}` });
-        speak(res.hint); // voice the hint — same verbatim text shown in chat
+        speakTutor(res.hint); // voice the hint — same verbatim text shown in chat
         return res;
       } catch (err) {
         addTrailEntry({ kind: 'hint', text: errorMessage(err, 'No hint available.') });
@@ -263,7 +247,7 @@ export function useDemoTutor() {
         // carry the same meaning in different words ("we are close" vs "you're
         // almost there"), which is confusing when read + heard together — so the
         // spoken audio must match the on-screen text verbatim.
-        speak(res.message);
+        speakTutor(res.message);
         return res;
       } catch (err) {
         console.warn('✗ /interaction failed:', err);

@@ -9,6 +9,9 @@
  *   { type: 'transcript_final',   text: string, role: 'ai' | 'student' }
  *   { type: 'session_state',      state: SessionState }
  *   { type: 'ui_instruction',     instruction: object }
+ *   { type: 'tts_start',          utteranceId: string, mime: string }   // streamed TTS
+ *   { type: 'tts_chunk',          utteranceId: string, seq: number, data: string } // base64
+ *   { type: 'tts_end',            utteranceId: string }
  *
  * Message schema (out):
  *   { type: 'audio_chunk', data: string }  // base64 PCM 16kHz mono
@@ -19,6 +22,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useNumeraStore } from '@/store/useNumeraStore';
+import { ttsMode, tutorAudioStream } from '@/lib/tts';
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? '';
 
@@ -71,6 +75,22 @@ export function useWebSocket(sessionId: string | null) {
           case 'ui_instruction':
             // Backend-controlled UI updates — extend this as the API matures
             console.log('[WS] ui_instruction', msg.instruction);
+            break;
+
+          // Streamed tutor TTS (played by the MediaSource engine in lib/tts).
+          // Ignored in 'browser' mode so we never double up with Web Speech.
+          case 'tts_start':
+            if (ttsMode() === 'stream')
+              tutorAudioStream.start(msg.utteranceId as string, msg.mime as string);
+            break;
+
+          case 'tts_chunk':
+            if (ttsMode() === 'stream')
+              tutorAudioStream.chunk(msg.utteranceId as string, msg.seq as number, msg.data as string);
+            break;
+
+          case 'tts_end':
+            if (ttsMode() === 'stream') tutorAudioStream.end(msg.utteranceId as string);
             break;
 
           default:
