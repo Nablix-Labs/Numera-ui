@@ -9,9 +9,10 @@
  *   { type: 'transcript_final',   text: string, role: 'ai' | 'student' }
  *   { type: 'session_state',      state: SessionState }
  *   { type: 'ui_instruction',     instruction: object }
- *   { type: 'tts_start',          utteranceId: string, mime: string }   // streamed TTS
- *   { type: 'tts_chunk',          utteranceId: string, seq: number, data: string } // base64
- *   { type: 'tts_end',            utteranceId: string }
+ *   // Streamed voice-server reply (:8004) — text first, then MP3 audio in chunks:
+ *   { type: 'tutor_response',     text: string, voice_text: string, ... }
+ *   { type: 'tutor_audio_chunk',  chunk: string, chunk_index: number }   // base64 MP3
+ *   { type: 'tutor_audio_end',    total_chunks: number, tts_latency_ms: number, error?: string }
  *
  * Message schema (out):
  *   { type: 'audio_chunk', data: string }  // base64 PCM 16kHz mono
@@ -22,7 +23,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useNumeraStore } from '@/store/useNumeraStore';
-import { ttsMode, tutorAudioStream } from '@/lib/tts';
+import { tutorAudioStream } from '@/lib/tts';
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? '';
 
@@ -77,20 +78,19 @@ export function useWebSocket(sessionId: string | null) {
             console.log('[WS] ui_instruction', msg.instruction);
             break;
 
-          // Streamed tutor TTS (played by the MediaSource engine in lib/tts).
-          // Ignored in 'browser' mode so we never double up with Web Speech.
-          case 'tts_start':
-            if (ttsMode() === 'stream')
-              tutorAudioStream.start(msg.utteranceId as string, msg.mime as string);
+          // Voice-server reply (:8004): text arrives first, MP3 audio streams after.
+          // Keep the socket OPEN — the audio chunks follow this message.
+          case 'tutor_response':
+            addTranscriptMessage({ role: 'ai', text: msg.text as string });
+            tutorAudioStream.begin(); // reset the player; chunks are coming next
             break;
 
-          case 'tts_chunk':
-            if (ttsMode() === 'stream')
-              tutorAudioStream.chunk(msg.utteranceId as string, msg.seq as number, msg.data as string);
+          case 'tutor_audio_chunk':
+            tutorAudioStream.push(msg.chunk_index as number, msg.chunk as string);
             break;
 
-          case 'tts_end':
-            if (ttsMode() === 'stream') tutorAudioStream.end(msg.utteranceId as string);
+          case 'tutor_audio_end':
+            tutorAudioStream.finishStream(msg.total_chunks as number, msg.error as string | undefined);
             break;
 
           default:
