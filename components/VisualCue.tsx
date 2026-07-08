@@ -36,8 +36,9 @@ export default function VisualCue() {
 
   return (
     <aside
-      // top-[68px] clears the fixed "Finish lesson → Practice" button (top-4).
-      className="lg-glass fixed top-[68px] right-4 z-30 w-64 rounded-card overflow-hidden transition-all duration-300"
+      // Top-left corner: keeps clear of the "Finish lesson → Practice" button,
+      // which is pinned top-right (they used to collide in that corner).
+      className="lg-glass fixed top-4 left-4 z-30 w-64 rounded-card overflow-hidden transition-all duration-300"
       style={{
         opacity: shown ? 1 : 0,
         transform: shown ? 'translateY(0)' : 'translateY(-6px)',
