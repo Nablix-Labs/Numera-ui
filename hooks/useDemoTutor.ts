@@ -39,6 +39,15 @@ function hasCanvasActivity(): boolean {
   return useNumeraStore.getState().items.length > 0;
 }
 
+/** Apply the backend's visual-cue instruction from an interaction response.
+ *  Prefers the richer `visual_cue.show`, falling back to the flat
+ *  `show_visual_cue`. No-ops when neither is present so a response that omits the
+ *  field never hides an already-shown cue. */
+function applyVisualCue(res: InteractionResponse): void {
+  const show = res.visual_cue?.show ?? res.show_visual_cue;
+  if (typeof show === 'boolean') useNumeraStore.getState().setVisualCueVisible(show);
+}
+
 /** Pull a human-readable message out of a normalised API error, if present. */
 function errorMessage(err: unknown, fallback: string): string {
   if (err && typeof err === 'object' && 'response' in err) {
@@ -106,6 +115,7 @@ export function useDemoTutor() {
         addTranscriptMessage({ role: 'ai', text: res.message });
         addTrailEntry({ kind: 'tutor', text: res.message });
         if (res.canvas_draw) useNumeraStore.getState().applyCanvasDraw(res.canvas_draw);
+        applyVisualCue(res); // backend may ask to show/hide the supporting visual
         speakTutor(res.message); // voice the reply — same verbatim text shown in chat
         return res;
       } catch (err) {
@@ -243,6 +253,7 @@ export function useDemoTutor() {
         addTranscriptMessage({ role: 'ai', text: res.message });
         addTrailEntry({ kind: 'tutor', text: res.message });
         if (res.canvas_draw) useNumeraStore.getState().applyCanvasDraw(res.canvas_draw);
+        applyVisualCue(res); // backend may ask to show/hide the supporting visual
         // Speak exactly what's shown in the chat. The backend's message_voice can
         // carry the same meaning in different words ("we are close" vs "you're
         // almost there"), which is confusing when read + heard together — so the

@@ -86,8 +86,9 @@ export interface SessionRecord {
   canvas_state: CanvasState;
   ui_state: string;
   message: string;
-  // UI flags — these live ONLY on the session record (start / read), not on
-  // /interaction responses. Stash them client-side after /session/start.
+  // UI flags on the session record (start / read). Stash them client-side after
+  // /session/start. Note: the backend also echoes show_visual_cue / visual_cue on
+  // /interaction responses (see InteractionResponse), so those update per turn.
   show_canvas: boolean;
   show_hint_button: boolean;
   show_visual_cue: boolean;
@@ -150,6 +151,15 @@ export interface InteractionPayload {
   hint_count: number;
 }
 
+/** Supporting picture the backend asks the frontend to show (e.g. an equation
+ *  block). `show` drives visibility; `cue_type` (e.g. 'EQUATION_BLOCK') can pick
+ *  which visual to render. Matches the backend VisualCue model. */
+export interface VisualCue {
+  show: boolean;
+  cue_type: string | null;
+  description: string | null;
+}
+
 export interface InteractionResponse {
   session_id: string;
   student_id: string;
@@ -162,6 +172,10 @@ export interface InteractionResponse {
   phase_indicator: string;
   /** Optional tutor drawing to render on the canvas alongside this reply. */
   canvas_draw?: CanvasDrawPayload;
+  /** Whether to show the supporting visual cue after this turn. The backend also
+   *  sends the richer `visual_cue` object; prefer that when present. */
+  show_visual_cue?: boolean;
+  visual_cue?: VisualCue | null;
 }
 
 /** POST /interaction — core tutoring call. Requires a started, owned session. */
