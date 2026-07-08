@@ -19,9 +19,16 @@ import { useFlowNav } from '@/lib/useFlowNav';
 import { useNumeraStore } from '@/store/useNumeraStore';
 import { useDemoTutor } from '@/hooks/useDemoTutor';
 import { useVoiceTurn } from '@/hooks/useVoiceTurn';
+import { useVoiceStream } from '@/hooks/useVoiceStream';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { DEMO_PHASE } from '@/lib/api';
 import { demoFor } from '@/lib/demoContent';
+
+// Voice turn transport. 'rest' (default): browser STT (useVoiceTurn) → REST +
+// browser TTS. 'server': stream mic audio to the :8004 voice server, which does
+// STT (Deepgram) + tutor + streamed TTS, all over the WS (see useVoiceStream /
+// useWebSocket). Flip to 'server' once the voice server is validated end to end.
+const VOICE_TRANSPORT = process.env.NEXT_PUBLIC_VOICE_TRANSPORT === 'server' ? 'server' : 'rest';
 
 // Real refraction glass (liquid-glass-react) — browser-only shader, so it's
 // loaded client-side to keep the static export happy.
@@ -42,9 +49,10 @@ export default function LessonPage() {
   const tutor = useDemoTutor();
   const { submitVoiceTurn, start: startSession, apiEnabled, sessionId } = tutor;
 
-  // Real-time channel for tutor canvas_draw (+ transcript/state). No-ops unless
-  // NEXT_PUBLIC_WS_URL is set, so it's safe to mount before the WS backend exists.
-  useWebSocket(sessionId ?? null);
+  // Real-time channel for tutor canvas_draw (+ transcript/state/streamed audio).
+  // No-ops unless NEXT_PUBLIC_WS_URL is set, so it's safe to mount before the WS
+  // backend exists.
+  const { sendAudioChunk } = useWebSocket(sessionId ?? null);
 
   // Wait for the persisted store to rehydrate before writing lesson content —
   // writing earlier would persist default state over the saved placement.
@@ -81,6 +89,9 @@ export default function LessonPage() {
     [submitVoiceTurn, activeConceptId, activeQuestionId]
   );
   const voice = useVoiceTurn({ onTurnEnd });
+  // Server transport: stream raw mic audio to the voice server instead of doing
+  // browser STT + REST. The server drives transcript/tutor_response/audio over WS.
+  const voiceStream = useVoiceStream({ onAudio: sendAudioChunk });
 
   // Start a backend session on lesson entry and let it drive the displayed
   // question/number/opening message. Mic starts muted so capture is opt-in.
@@ -99,13 +110,15 @@ export default function LessonPage() {
     });
   }, [hydrated, apiEnabled, sessionId, activeConceptId, startSession, setMicMuted, setQuestionText, setQuestionNumber, setTranscript, clearTutorMarks]);
 
-  // Mic button drives real voice capture: unmuted → listen + fire turns on
-  // silence; muted → stop.
+  // Mic button drives real voice capture: unmuted → listen; muted → stop. In
+  // 'rest' transport the browser detects turns + fires REST; in 'server' transport
+  // we stream mic audio to the voice server and it drives the turn over the WS.
+  const capture = VOICE_TRANSPORT === 'server' ? voiceStream : voice;
   useEffect(() => {
-    if (!apiEnabled || !sessionId || !voice.supported) return;
-    if (!micMuted) void voice.start();
-    else voice.stop();
-  }, [apiEnabled, sessionId, micMuted, voice]);
+    if (!apiEnabled || !sessionId || !capture.supported) return;
+    if (!micMuted) void capture.start();
+    else capture.stop();
+  }, [apiEnabled, sessionId, micMuted, capture]);
 
   return (
     <>
